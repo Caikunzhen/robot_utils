@@ -63,7 +63,7 @@ inline double Rad2Deg(double rad) { return rad * kRad2DegCoff; }
 template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
 inline T GenericMod(const T& val, const T& mod)
 {
-  if (mod <= 0) {
+  if (mod == 0) {
     return val;
   }
   if constexpr (std::is_integral_v<T>) {
@@ -72,24 +72,6 @@ inline T GenericMod(const T& val, const T& mod)
     T result = std::fmod(val, mod);
     return result;
   }
-}
-/**
- * @brief Generic mod function
- *
- * This function performs a modulus operation for any arithmetic type.
- * For integral types, it uses the % operator.
- * For floating-point types, it uses the std::fmod function.
- *
- * @tparam T Arithmetic type (integer or floating point)
- * @param[in] val The value to be modded
- * @param[in|out] mod The modulus, which is modified in place
- * @return None
- * @note When mod is not positive, the function does not modify it.
- */
-template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-inline void GenericMod(const T& val, const T* mod)
-{
-  *mod = GenericMod(val, *mod);
 }
 
 /**
