@@ -436,7 +436,7 @@ class CascadedPid
   using FfdVec = Eigen::VectorX<T>;
 
   explicit CascadedPid(const Params& params);
-  ~CascadedPid(void) = default;
+  virtual ~CascadedPid(void) = default;
 
   /**
    * @brief Calculate the output of the cascaded PID controller
@@ -524,7 +524,7 @@ class ParallelPid
   using FfdVec = Eigen::VectorX<T>;
 
   explicit ParallelPid(const Params& params);
-  ~ParallelPid(void) = default;
+  virtual ~ParallelPid(void) = default;
 
   /**
    * @brief Calculate the output of the parallel PID controller
@@ -584,6 +584,15 @@ class ParallelPid
 
   std::vector<PidNode<T>> pid_nodes_;  //<! pid nodes
 };
+
+extern template class CascadedPid<float>;
+using CascadedPidf = CascadedPid<float>;
+extern template class CascadedPid<double>;
+using CascadedPidd = CascadedPid<double>;
+extern template class ParallelPid<float>;
+using ParallelPidf = ParallelPid<float>;
+extern template class ParallelPid<double>;
+using ParallelPidd = ParallelPid<double>;
 /* Exported variables --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
 }  // namespace robot_utils

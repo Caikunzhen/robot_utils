@@ -118,7 +118,7 @@ class Td
   };
 
   explicit Td(const Params& params);
-  ~Td(void) = default;
+  virtual ~Td(void) = default;
 
   /**
    * @brief Calculate the derivative of the input signal
@@ -149,6 +149,11 @@ class Td
   Params params_;
   Data data_;
 };
+
+extern template class Td<float>;
+using Tdf = Td<float>;
+extern template class Td<double>;
+using Tdd = Td<double>;
 /* Exported variables --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
 }  // namespace robot_utils

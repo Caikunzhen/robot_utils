@@ -128,8 +128,6 @@ class Mpc
   using ConstPtr = std::shared_ptr<const Mpc>;
 
   using real_t = qpOASES::real_t;
-  //<! expected state vector, size (n * horizon, 1)
-  using RefStateVec = Eigen::VectorX<real_t>;
   using StateVec = Eigen::VectorX<real_t>;  //<! state vector, size (n, 1)
   using InputVec = Eigen::VectorX<real_t>;  //<! input vector, size (m, 1)
   using DiagMatX =
@@ -139,8 +137,8 @@ class Mpc
   //<! state sequence, size (horizon, n)
   using StateSeq = std::vector<StateVec>;
 
-  explicit Mpc(const Params& params) { setParams(params); }
-  ~Mpc(void) = default;
+  explicit Mpc(const Params& params);
+  virtual ~Mpc(void) = default;
 
   /**
    * @brief Solve the MPC problem
@@ -150,13 +148,14 @@ class Mpc
    * solve the problem. The function returns true if the problem is solved
    * successfully, and false otherwise.
    *
-   * @param[in] x_ref: reference state vector, size (n * horizon, 1)
+   * @param[in] x_ref_seq: sequence of reference state vector, size horizon *
+   * (n, 1)
    * @param[in] x0: initial state vector, size (n, 1)
    * @param[in] force_init: whether to force re-initialization of the QP solver
    * @return true if the problem is solved successfully, false otherwise
    * @note None
    */
-  bool solve(const RefStateVec& x_ref, const StateVec& x0,
+  bool solve(const StateSeq& x_ref_seq, const StateVec& x0,
              bool force_init = false);
 
   /**
@@ -243,7 +242,7 @@ class Mpc
 
   void calcH(void);
 
-  void calcG(const RefStateVec& x_ref);
+  void calcG(const StateSeq& x_ref_seq);
 
   void calcA(void) { A_ = S_bar_; }
 

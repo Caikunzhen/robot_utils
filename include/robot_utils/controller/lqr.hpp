@@ -77,7 +77,7 @@ struct LqrParams {
     params.tol = node["tol"].as<T>();
 
     if (node["A"]) {
-      params.A = Eigen::MatrixX<T>::Zero(params.n, params.n);
+      params.A.resize(params.n, params.n);
       std::vector<T> A_flat;
       node["A"].as<std::vector<T>>(A_flat);
       PARAM_ASSERT(
@@ -92,7 +92,7 @@ struct LqrParams {
     }
 
     if (node["B"]) {
-      params.B = Eigen::MatrixX<T>::Zero(params.n, params.m);
+      params.B.resize(params.n, params.m);
       std::vector<T> B_flat;
       node["B"].as<std::vector<T>>(B_flat);
       PARAM_ASSERT(
@@ -179,7 +179,7 @@ class Lqr
   };
 
   explicit Lqr(const Params& params) { setParams(params); }
-  ~Lqr(void) = default;
+  virtual ~Lqr(void) = default;
 
   /**
    * @brief Calculate the LQR feedback gain
@@ -245,6 +245,11 @@ class Lqr
   Params params_;
   Data data_;
 };
+
+extern template class Lqr<float>;
+using Lqrf = Lqr<float>;
+extern template class Lqr<double>;
+using Lqrd = Lqr<double>;
 /* Exported variables --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
 }  // namespace robot_utils

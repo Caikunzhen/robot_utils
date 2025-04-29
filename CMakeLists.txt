@@ -22,9 +22,6 @@ add_definitions(-DUSE_RU_ASSERT=${USE_RU_ASSERT})
 find_package(Eigen3 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(qpOASES QUIET)
-if (qpOASES_FOUND)
-  add_definitions(-DHAS_QPOASES)
-endif()
 
 file(GLOB_RECURSE ROBOT_UTILS_SRC
   src/*.cpp
@@ -41,14 +38,6 @@ target_link_libraries(
     yaml-cpp
 )
 
-if (qpOASES_FOUND)
-  target_link_libraries(
-    ${PROJECT_NAME}
-    PUBLIC
-      qpOASES
-  )
-endif()
-
 target_include_directories(
   ${PROJECT_NAME}
   PUBLIC
@@ -61,3 +50,16 @@ target_compile_definitions(
   PUBLIC
     USE_RU_ASSERT=${USE_RU_ASSERT}
 )
+
+if (qpOASES_FOUND)
+  target_link_libraries(
+    ${PROJECT_NAME}
+    PUBLIC
+      qpOASES
+  )
+  target_compile_definitions(
+    ${PROJECT_NAME}
+    PUBLIC
+      HAS_QPOASES
+  )
+endif()

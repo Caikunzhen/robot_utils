@@ -227,7 +227,7 @@ class PidNode
   };
 
   explicit PidNode(const Params& params);
-  ~PidNode(void) = default;
+  virtual ~PidNode(void) = default;
 
   /**
    * @brief Calculate the PID output
@@ -261,6 +261,11 @@ class PidNode
 
   Td<T>::Ptr td_ptr_;
 };
+
+extern template class PidNode<float>;
+using PidNodef = PidNode<float>;
+extern template class PidNode<double>;
+using PidNoded = PidNode<double>;
 /* Exported variables --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
 }  // namespace robot_utils

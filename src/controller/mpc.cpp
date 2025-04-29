@@ -36,7 +36,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   params.max_iter = node["max_iter"].as<qpOASES::int_t>();
 
   if (node["A"]) {
-    params.A = Eigen::MatrixX<real_t>::Zero(params.n, params.n);
+    params.A.resize(params.n, params.n);
     std::vector<real_t> A_flat;
     node["A"].as<std::vector<real_t>>(A_flat);
     PARAM_ASSERT(
@@ -51,7 +51,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   if (node["B"]) {
-    params.B = Eigen::MatrixX<real_t>::Zero(params.n, params.m);
+    params.B.resize(params.n, params.m);
     std::vector<real_t> B_flat;
     node["B"].as<std::vector<real_t>>(B_flat);
     PARAM_ASSERT(
@@ -65,6 +65,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
     }
   }
 
+  params.Q.resize(params.n);
   std::vector<real_t> Q_diag;
   node["Q_diag"].as<std::vector<real_t>>(Q_diag);
   PARAM_ASSERT(
@@ -75,6 +76,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
     params.Q.diagonal()[i] = Q_diag[i];
   }
 
+  params.R.resize(params.m);
   std::vector<real_t> R_diag;
   node["R_diag"].as<std::vector<real_t>>(R_diag);
   PARAM_ASSERT(
@@ -85,6 +87,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
     params.R.diagonal()[i] = R_diag[i];
   }
 
+  params.P.resize(params.n);
   std::vector<real_t> P_diag;
   node["P_diag"].as<std::vector<real_t>>(P_diag);
   PARAM_ASSERT(
@@ -95,25 +98,65 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
     params.P.diagonal()[i] = P_diag[i];
   }
 
+  params.x_min_.resize(params.n);
   std::vector<real_t> x_min;
   node["x_min"].as<std::vector<real_t>>(x_min);
-  params.x_min_ = Eigen::VectorX<real_t>::Zero(params.n);
   PARAM_ASSERT(x_min.size() == params.n,
                "x_min size is not correct, expected size: %d, actual size: %d",
                params.n, x_min.size());
   for (size_t i = 0; i < params.n; ++i) {
     params.x_min_(i) = x_min[i];
   }
+
+  params.x_max_.resize(params.n);
+  std::vector<real_t> x_max;
+  node["x_max"].as<std::vector<real_t>>(x_max);
+  PARAM_ASSERT(x_max.size() == params.n,
+               "x_max size is not correct, expected size: %d, actual size: %d",
+               params.n, x_max.size());
+  for (size_t i = 0; i < params.n; ++i) {
+    params.x_max_(i) = x_max[i];
+  }
+
+  params.u_min_.resize(params.m);
+  std::vector<real_t> u_min;
+  node["u_min"].as<std::vector<real_t>>(u_min);
+  PARAM_ASSERT(u_min.size() == params.m,
+               "u_min size is not correct, expected size: %d, actual size: %d",
+               params.m, u_min.size());
+  for (size_t i = 0; i < params.m; ++i) {
+    params.u_min_(i) = u_min[i];
+  }
+
+  params.u_max_.resize(params.m);
+  std::vector<real_t> u_max;
+  node["u_max"].as<std::vector<real_t>>(u_max);
+  PARAM_ASSERT(u_max.size() == params.m,
+               "u_max size is not correct, expected size: %d, actual size: %d",
+               params.m, u_max.size());
+  for (size_t i = 0; i < params.m; ++i) {
+    params.u_max_(i) = u_max[i];
+  }
 }
 
-bool Mpc::solve(const RefStateVec& x_ref, const StateVec& x0, bool force_init)
+Mpc::Mpc(const Params& params)
 {
-  PARAM_ASSERT(x_ref.size() == params_.n * params_.horizon,
-               "x_ref size must be equal to n * horizon");
+  setParams(params);
+
+  qpOASES::Options op;
+  op.setToMPC();
+  op.printLevel = qpOASES::PL_NONE;
+  qp_.setOptions(op);
+}
+
+bool Mpc::solve(const StateSeq& x_ref_seq, const StateVec& x0, bool force_init)
+{
+  PARAM_ASSERT(x_ref_seq.size() == params_.horizon,
+               "x_ref_seq size must be equal to horizon");
   PARAM_ASSERT(x0.size() == params_.n, "x0 size must be equal to n");
 
   x0_ = x0;
-  calcG(x0);
+  calcG(x_ref_seq);
   calcLbAUbA();
 
   qpOASES::returnValue ret;
@@ -227,9 +270,9 @@ void Mpc::setParams(const Params& params)
 
 void Mpc::calcSBar(void)
 {
-  size_t& N = params_.horizon;
-  size_t& n = params_.n;
-  size_t& m = params_.m;
+  const size_t& N = params_.horizon;
+  const size_t& n = params_.n;
+  const size_t& m = params_.m;
   S_bar_ = Eigen::MatrixX<real_t>::Zero(n * N, m * N);
   Eigen::MatrixX<real_t> A_i_x_B = params_.B;
   for (size_t i = 0; i < N; ++i) {
@@ -245,8 +288,8 @@ void Mpc::calcSBar(void)
 
 void Mpc::calcTBar(void)
 {
-  size_t& N = params_.horizon;
-  size_t& n = params_.n;
+  const size_t& N = params_.horizon;
+  const size_t& n = params_.n;
   T_bar_ = Eigen::MatrixX<real_t>::Zero(n * N, n);
   Eigen::MatrixX<real_t> A_i = Eigen::MatrixX<real_t>::Identity(n, n);
   for (size_t i = 0; i < N; ++i) {
@@ -257,7 +300,9 @@ void Mpc::calcTBar(void)
 
 void Mpc::calcQBar(void)
 {
-  size_t& N = params_.horizon;
+  const size_t& N = params_.horizon;
+  const size_t& n = params_.n;
+  Q_bar_.resize(n * N);
   const auto& Q = params_.Q;
   const auto& P = params_.P;
 
@@ -270,7 +315,9 @@ void Mpc::calcQBar(void)
 
 void Mpc::calcRBar(void)
 {
-  size_t& N = params_.horizon;
+  const size_t& N = params_.horizon;
+  const size_t& m = params_.m;
+  R_bar_.resize(m * N);
   const auto& R = params_.R;
   R_bar_.diagonal() = R.diagonal().replicate(N, 1);
 }
@@ -281,8 +328,15 @@ void Mpc::calcH(void)
   H_.diagonal() += R_bar_.diagonal();
 }
 
-void Mpc::calcG(const RefStateVec& x_ref)
+void Mpc::calcG(const StateSeq& x_ref_seq)
 {
+  Eigen::VectorX<real_t> x_ref =
+      Eigen::VectorX<real_t>::Zero(params_.n * params_.horizon);
+  for (size_t i = 0; i < params_.horizon; ++i) {
+    PARAM_ASSERT(x_ref_seq[i].size() == params_.n,
+                 "x_ref_seq[%d] size must be equal to n", i);
+    x_ref.segment(i * params_.n, params_.n) = x_ref_seq[i];
+  }
   g_ = S_bar_.transpose() * Q_bar_ * (T_bar_ * x0_ - x_ref);
 }
 
@@ -304,8 +358,7 @@ void Mpc::calcLbAUbA(void)
   lbA_ = x_bar_min - T_bar_ * x0_;
   ubA_ = x_bar_max - T_bar_ * x0_;
 }
-/* Private function definitions
- * ----------------------------------------------*/
+/* Private function definitions ----------------------------------------------*/
 }  // namespace robot_utils
 
 #endif /* HAS_QPOASES */
