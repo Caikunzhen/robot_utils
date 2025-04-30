@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
  * @file      : assert.hpp
- * @brief     :
+ * @brief     : This file provides the assert function for robot_utils.
  * @history   :
  *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
+ *  V1.0.0      2025-04-30      Caikunzhen      1. Complete the assert.hpp
  *******************************************************************************
  * @attention :
+ * When CMAKE_BUILD_TYPE = Debug, the assert function will be enabled. When
+ * CMAKE_BUILD_TYPE = Release, the assert function will be disabled unless
+ * USE_RU_ASSERT is defined and set to 1.
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.

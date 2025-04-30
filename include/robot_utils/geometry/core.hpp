@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
  * @file      : core.hpp
- * @brief     :
+ * @brief     : This file provides the basic function for geometry process.
  * @history   :
  *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
+ *  V1.0.0      2025-04-30      Caikunzhen      1. Complete the core.hpp
  *******************************************************************************
  * @attention :
  *******************************************************************************
@@ -20,6 +20,8 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <type_traits>
+
+#include "robot_utils/core/math_tools.hpp"
 /* Exported macro ------------------------------------------------------------*/
 
 namespace robot_utils
@@ -97,14 +99,18 @@ template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void RotMat2EulerAngle(const Eigen::Matrix3<T>& R,
                               Eigen::Vector3<T>& euler)
 {
-  euler(1) = asin(R(0, 2));
-
-  if (abs(R(0, 2) < T(0.9999999))) {  // not gimbal lock
-    euler(0) = atan2(-R(1, 2), R(2, 2));
-    euler(2) = atan2(-R(0, 1), R(0, 0));
+  euler.y() = -asin(R(2, 0));
+  if (abs(R(2, 0) < T(0.9999999))) {  // not gimbal lock
+    T sign = GetSign(cos(euler.y()));
+    euler.x() = atan2(R(2, 1) * sign, R(2, 2) * sign);
+    euler.z() = atan2(R(1, 0) * sign, R(0, 0) * sign);
   } else {
-    euler(0) = atan2(R(2, 1), R(1, 1));
-    euler(2) = 0;
+    euler.x() = 0;
+    if (R(2, 0) > 0) {
+      euler.z() = atan2(-R(0, 1), -R(0, 2));
+    } else {
+      euler.z() = -atan2(R(0, 1), R(0, 2));
+    }
   }
 }
 
@@ -134,6 +140,7 @@ template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void RotMat2Quat(const Eigen::Matrix3<T>& R, Eigen::Quaternion<T>& q)
 {
   q = Eigen::Quaternion<T>(R);
+  q.normalize();
 }
 
 /**
@@ -188,9 +195,9 @@ template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void EulerAngle2RotMat(const Eigen::Vector3<T>& euler,
                               Eigen::Matrix3<T>& R)
 {
-  R = Eigen::AngleAxis<T>(euler(0), Eigen::Vector3<T>::UnitZ()) *
-      Eigen::AngleAxis<T>(euler(1), Eigen::Vector3<T>::UnitY()) *
-      Eigen::AngleAxis<T>(euler(2), Eigen::Vector3<T>::UnitX());
+  R = Eigen::AngleAxis<T>(euler.z(), Eigen::Vector3<T>::UnitZ()) *
+      Eigen::AngleAxis<T>(euler.y(), Eigen::Vector3<T>::UnitY()) *
+      Eigen::AngleAxis<T>(euler.x(), Eigen::Vector3<T>::UnitX());
 }
 
 /**
@@ -218,9 +225,10 @@ template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void EulerAngle2Quat(const Eigen::Vector3<T>& euler,
                             Eigen::Quaternion<T>& q)
 {
-  q = Eigen::AngleAxis<T>(euler(0), Eigen::Vector3<T>::UnitZ()) *
-      Eigen::AngleAxis<T>(euler(1), Eigen::Vector3<T>::UnitY()) *
-      Eigen::AngleAxis<T>(euler(2), Eigen::Vector3<T>::UnitX());
+  q = Eigen::AngleAxis<T>(euler.z(), Eigen::Vector3<T>::UnitZ()) *
+      Eigen::AngleAxis<T>(euler.y(), Eigen::Vector3<T>::UnitY()) *
+      Eigen::AngleAxis<T>(euler.x(), Eigen::Vector3<T>::UnitX());
+  q.normalize();
 }
 
 /**
@@ -248,9 +256,9 @@ template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void EulerAngle2AngleAxis(const Eigen::Vector3<T>& euler,
                                  Eigen::AngleAxis<T>& angle_axis)
 {
-  angle_axis = Eigen::AngleAxis<T>(euler(0), Eigen::Vector3<T>::UnitZ()) *
-               Eigen::AngleAxis<T>(euler(1), Eigen::Vector3<T>::UnitY()) *
-               Eigen::AngleAxis<T>(euler(2), Eigen::Vector3<T>::UnitX());
+  angle_axis = Eigen::AngleAxis<T>(euler.z(), Eigen::Vector3<T>::UnitZ()) *
+               Eigen::AngleAxis<T>(euler.y(), Eigen::Vector3<T>::UnitY()) *
+               Eigen::AngleAxis<T>(euler.x(), Eigen::Vector3<T>::UnitX());
 }
 
 /**
@@ -277,7 +285,7 @@ inline Eigen::AngleAxis<T> EulerAngle2AngleAxis(const Eigen::Vector3<T>& euler)
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void Quat2RotMat(const Eigen::Quaternion<T>& q, Eigen::Matrix3<T>& R)
 {
-  R = q.toRotationMatrix();
+  R = q.normalized().toRotationMatrix();
 }
 
 /**
@@ -305,17 +313,19 @@ template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void Quat2EulerAngle(const Eigen::Quaternion<T>& q,
                             Eigen::Vector3<T>& euler)
 {
-  T sinp = T(2.0) * (q.w() * q.y() - q.z() * q.x());
-  T tmp = q.w() * q.x() + q.y() * q.z();
+  Eigen::Quaternion<T> qn = q.normalized();
+  euler.x() = atan2(qn.w() * qn.x() + qn.y() * qn.z(),
+                    T(0.5) - qn.x() * qn.x() - qn.y() * qn.y());
+
+  T sinp = 2 * (qn.w() * qn.y() - qn.z() * qn.x());
   if (abs(sinp) >= 1) {  // gimbal lock
-    euler(1) = copysign(M_PI_2, sinp);
-    euler(0) = atan2(tmp, T(0.5) - (q.x() * q.x() + q.y() * q.y()));
-    euler(2) = 0;
+    euler.y() = copysign(M_PI_2, sinp);
   } else {
-    euler(1) = asin(sinp);
-    euler(0) = atan2(tmp, T(0.5) - (q.x() * q.x() + q.y() * q.y()));
-    euler(2) = atan2(tmp, T(0.5) - (q.y() * q.y() + q.z() * q.z()));
+    euler.y() = asin(sinp);
   }
+
+  euler.z() = atan2(qn.w() * qn.z() + qn.x() * qn.y(),
+                    T(0.5) - qn.y() * qn.y() - qn.z() * qn.z());
 }
 
 /**
@@ -343,7 +353,7 @@ template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void Quat2AngleAxis(const Eigen::Quaternion<T>& q,
                            Eigen::AngleAxis<T>& angle_axis)
 {
-  angle_axis = Eigen::AngleAxis<T>(q);
+  angle_axis = Eigen::AngleAxis<T>(q.normalized());
 }
 
 /**
@@ -430,6 +440,7 @@ inline void AngleAxis2Quat(const Eigen::AngleAxis<T>& angle_axis,
                            Eigen::Quaternion<T>& q)
 {
   q = Eigen::Quaternion<T>(angle_axis);
+  q.normalize();
 }
 
 /**

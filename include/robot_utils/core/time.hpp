@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
  * @file      : time.hpp
- * @brief     :
+ * @brief     : This file provides the time function for robot_utils.
  * @history   :
  *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
+ *  V1.0.0      2025-04-30      Caikunzhen      1. Complete the time.hpp
  *******************************************************************************
  * @attention :
  *******************************************************************************
