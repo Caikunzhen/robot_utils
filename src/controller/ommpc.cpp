@@ -41,59 +41,76 @@ void OmmpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   params.Q.resize(params.n);
   std::vector<real_t> Q_diag;
   node["Q_diag"].as<std::vector<real_t>>(Q_diag);
-  PARAM_ASSERT(
-      Q_diag.size() == params.n,
-      "Q matrix size is not correct, expected size: %d, actual size: %d",
-      params.n, Q_diag.size());
+  RU_ASSERT(Q_diag.size() == params.n,
+            "Q matrix size is not correct, expected size: %d, actual size: %d",
+            params.n, Q_diag.size());
   for (size_t i = 0; i < params.n; ++i) {
     params.Q.diagonal()[i] = Q_diag[i];
-  }
-
-  params.R.resize(params.m);
-  std::vector<real_t> R_diag;
-  node["R_diag"].as<std::vector<real_t>>(R_diag);
-  PARAM_ASSERT(
-      R_diag.size() == params.m,
-      "R matrix size is not correct, expected size: %d, actual size: %d",
-      params.m, R_diag.size());
-  for (size_t i = 0; i < params.m; ++i) {
-    params.R.diagonal()[i] = R_diag[i];
   }
 
   params.P.resize(params.n);
   std::vector<real_t> P_diag;
   node["P_diag"].as<std::vector<real_t>>(P_diag);
-  PARAM_ASSERT(
-      P_diag.size() == params.n,
-      "P matrix size is not correct, expected size: %d, actual size: %d",
-      params.n, P_diag.size());
+  RU_ASSERT(P_diag.size() == params.n,
+            "P matrix size is not correct, expected size: %d, actual size: %d",
+            params.n, P_diag.size());
   for (size_t i = 0; i < params.n; ++i) {
     params.P.diagonal()[i] = P_diag[i];
   }
 
-  params.u_min_.resize(params.m);
-  std::vector<real_t> u_min;
-  node["u_min"].as<std::vector<real_t>>(u_min);
-  PARAM_ASSERT(u_min.size() == params.m,
-               "u_min size is not correct, expected size: %d, actual size: %d",
-               params.m, u_min.size());
+  params.R.resize(params.m);
+  std::vector<real_t> R_diag;
+  node["R_diag"].as<std::vector<real_t>>(R_diag);
+  RU_ASSERT(R_diag.size() == params.m,
+            "R matrix size is not correct, expected size: %d, actual size: %d",
+            params.m, R_diag.size());
   for (size_t i = 0; i < params.m; ++i) {
-    params.u_min_(i) = u_min[i];
+    params.R.diagonal()[i] = R_diag[i];
   }
 
-  params.u_max_.resize(params.m);
+  params.u_min.resize(params.m);
+  std::vector<real_t> u_min;
+  node["u_min"].as<std::vector<real_t>>(u_min);
+  RU_ASSERT(u_min.size() == params.m,
+            "u_min size is not correct, expected size: %d, actual size: %d",
+            params.m, u_min.size());
+  for (size_t i = 0; i < params.m; ++i) {
+    params.u_min(i) = u_min[i];
+  }
+
+  params.u_max.resize(params.m);
   std::vector<real_t> u_max;
   node["u_max"].as<std::vector<real_t>>(u_max);
-  PARAM_ASSERT(u_max.size() == params.m,
-               "u_max size is not correct, expected size: %d, actual size: %d",
-               params.m, u_max.size());
+  RU_ASSERT(u_max.size() == params.m,
+            "u_max size is not correct, expected size: %d, actual size: %d",
+            params.m, u_max.size());
   for (size_t i = 0; i < params.m; ++i) {
-    params.u_max_(i) = u_max[i];
+    params.u_max(i) = u_max[i];
   }
 }
 
 Ommpc::Ommpc(const Params& params)
 {
+  RU_ASSERT(params.n > 0, "The number of states must be greater than 0");
+  RU_ASSERT(params.m > 0, "The number of inputs must be greater than 0");
+  RU_ASSERT(params.horizon > 0,
+            "The prediction horizon must be greater than 0");
+  RU_ASSERT(params.dt > 0, "The time step must be greater than 0");
+
+  params_.n = params.n;
+  params_.m = params.m;
+  params_.horizon = params.horizon;
+  params_.dt = params.dt;
+  const size_t& n = params_.n;
+  const size_t& m = params_.m;
+  const size_t& N = params_.horizon;
+  S_bar_ = Eigen::MatrixX<real_t>::Zero(N * n, N * m);
+  T_bar_ = Eigen::MatrixX<real_t>::Zero(N * n, n);
+  dU_ = Eigen::MatrixX<real_t>::Zero(N * m, 1);
+  Q_bar_.resize(N * n);
+  R_bar_.resize(N * m);
+  lb_.resize(N * m);
+  ub_.resize(N * m);
   setParams(params);
 
   qpOASES::Options op;
@@ -105,30 +122,34 @@ Ommpc::Ommpc(const Params& params)
 bool Ommpc::solve(const StateSeq& x_ref_seq, const CtrlSeq& u_ref_seq,
                   const StateVec& x0)
 {
-  PARAM_ASSERT(x_ref_seq.size() == params_.horizon,
-               "x_ref_seq size must be equal to horizon");
-  PARAM_ASSERT(u_ref_seq.size() == params_.horizon,
-               "u_ref_seq size must be equal to horizon");
-  PARAM_ASSERT(x0.dim() == params_.n, "x0 size must be equal to n");
+  RU_ASSERT(x_ref_seq.size() == params_.horizon + 1,
+            "x_ref_seq size must be equal to horizon + 1");
+  RU_ASSERT(u_ref_seq.size() == params_.horizon,
+            "u_ref_seq size must be equal to horizon");
+  RU_ASSERT(x0.dim() == params_.n, "x0 size must be equal to n");
 
   const size_t& N = params_.horizon;
   const size_t& n = params_.n;
   const size_t& m = params_.m;
 
-  x_ref_seq_ = x_ref_seq;
+  if (x_ref_seq_.empty()) {
+    x_ref_seq_ = x_ref_seq;
+  } else {
+    for (size_t i = 0; i < N + 1; ++i) {
+      x_ref_seq_[i].copyData(x_ref_seq[i]);
+    }
+  }
   u_ref_seq_ = u_ref_seq;
 
   Eigen::MatrixX<real_t> F_x_i, F_u_i;
   Eigen::MatrixX<real_t> F_x_mul = Eigen::MatrixX<real_t>::Identity(n, n);
   for (size_t i = 0; i < N; ++i) {
-    PARAM_ASSERT(
-        x_ref_seq[i].dim() == n,
-        "x_ref_seq[%zu] size must be equal to n, expected %zu, got %zu", i, n,
-        x_ref_seq[i].dim());
-    PARAM_ASSERT(
-        u_ref_seq[i].size() == m,
-        "u_ref_seq[%zu] size must be equal to m, expected %zu, got %zu", i, m,
-        u_ref_seq[i].size());
+    RU_ASSERT(x_ref_seq[i].dim() == n,
+              "x_ref_seq[%zu] dim must be equal to n, expected %zu, got %zu", i,
+              n, x_ref_seq[i].dim());
+    RU_ASSERT(u_ref_seq[i].size() == m,
+              "u_ref_seq[%zu] size must be equal to m, expected %zu, got %zu",
+              i, m, u_ref_seq[i].size());
 
     getJacobian(x_ref_seq[i], u_ref_seq[i], F_x_i, F_u_i);
     for (size_t j = 0; j < i; ++j) {
@@ -138,8 +159,8 @@ bool Ommpc::solve(const StateSeq& x_ref_seq, const CtrlSeq& u_ref_seq,
     S_bar_.block(i * n, i * m, n, m) = F_u_i;
     F_x_mul = F_x_i * F_x_mul;
     T_bar_.block(i * n, 0, n, n) = F_x_mul;
-    lb_.segment(i * m, m) = params_.u_min_ - u_ref_seq[i];
-    ub_.segment(i * m, m) = params_.u_max_ - u_ref_seq[i];
+    lb_.segment(i * m, m) = params_.u_min - u_ref_seq[i];
+    ub_.segment(i * m, m) = params_.u_max - u_ref_seq[i];
   }
 
   Eigen::MatrixX<real_t> tmp = S_bar_.transpose() * Q_bar_;
@@ -148,6 +169,26 @@ bool Ommpc::solve(const StateSeq& x_ref_seq, const CtrlSeq& u_ref_seq,
   dx0_ = x0 - x_ref_seq[0];
   g_ = tmp * T_bar_ * dx0_;
 
+  /**
+   * solve the QP problem
+   *
+   * The QP problem is defined as:
+   *
+   * \f[
+   * \underset{\delta ^{qp}U}{\min}J =
+   * \frac{1}{2}\delta\ ^{qp}U^T\ ^{qp}H\delta\ ^{qp}U +\delta\ ^{qp}U^T\ ^{qp}g
+   * \f]
+   *
+   * s.t.
+   *
+   * \f[
+   * ^{qp}b_{min} \leq\ ^{qp}A\delta\ ^{qp}U \leq\ ^{qp}b_{max}
+   * \f]
+   *
+   * \f[
+   * \delta\ ^{qp}U_{min} \leq\delta\ ^{qp}U \leq\delta\ ^{qp}U_{max}
+   * \f]
+   */
   qpOASES::returnValue ret;
   qpOASES::int_t nWSR = params_.max_iter;
   ret = qp_.init(H_.data(), g_.data(), nullptr, lb_.data(), ub_.data(), nullptr,
@@ -156,7 +197,7 @@ bool Ommpc::solve(const StateSeq& x_ref_seq, const CtrlSeq& u_ref_seq,
   if (ret != qpOASES::SUCCESSFUL_RETURN) {
     solved_ = false;
   } else {
-    qp_.getPrimalSolution(dU_bar_.data());
+    qp_.getPrimalSolution(dU_.data());
     solved_ = true;
   }
 
@@ -170,71 +211,66 @@ void Ommpc::getCtrl(InputVec& u, size_t forward_steps) const
   }
 
   if (!solved_) {
-    PARAM_ASSERT(false, "MPC has not been solved yet");
+    RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
-  u = dU_bar_.segment(forward_steps * params_.m, params_.m) +
+  u = dU_.segment(forward_steps * params_.m, params_.m) +
       u_ref_seq_[forward_steps];
 }
 
 void Ommpc::getCtrlSeq(CtrlSeq& u_seq) const
 {
   if (!solved_) {
-    PARAM_ASSERT(false, "MPC has not been solved yet");
+    RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
   u_seq.clear();
   for (size_t i = 0; i < params_.horizon; ++i) {
-    u_seq.emplace_back(dU_bar_.segment(i * params_.m, params_.m) +
-                       u_ref_seq_[i]);
+    u_seq.emplace_back(dU_.segment(i * params_.m, params_.m) + u_ref_seq_[i]);
   }
 }
 
 void Ommpc::getPredStateSeq(StateSeq& x_seq) const
 {
   if (!solved_) {
-    PARAM_ASSERT(false, "MPC has not been solved yet");
+    RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
-  Eigen::VectorX<real_t> dx_bar = S_bar_ * dU_bar_ + T_bar_ * dx0_;
+  Eigen::VectorX<real_t> dx_bar = S_bar_ * dU_ + T_bar_ * dx0_;
   x_seq.clear();
 
-  x_seq.emplace_back(x_ref_seq_[0] + dx0_);
-  for (size_t i = 1; i < params_.horizon; ++i) {
-    x_seq.emplace_back(x_ref_seq_[i] +
-                       dx_bar.segment((i - 1) * params_.n, params_.n));
+  for (size_t i = 0; i < params_.horizon; ++i) {
+    x_seq.emplace_back(x_ref_seq_[i + 1] +
+                       dx_bar.segment(i * params_.n, params_.n));
   }
 }
 
 void Ommpc::setParams(const Params& params)
 {
-  PARAM_ASSERT(params.n > 0, "The number of states must be greater than 0");
-  PARAM_ASSERT(params.m > 0, "The number of inputs must be greater than 0");
-  PARAM_ASSERT(params.horizon > 0,
-               "The prediction horizon must be greater than 0");
-  PARAM_ASSERT(params.max_iter > 0,
-               "The maximum number of iterations must be greater than 0");
-  PARAM_ASSERT(params.f, "f must be a non-null function");
-  PARAM_ASSERT(params.f_dx, "f_dx must be a non-null function");
-  PARAM_ASSERT(params.f_du, "f_du must be a non-null function");
-  PARAM_ASSERT(params.Q.rows() == params.n && params.Q.cols() == params.n,
-               "Q must be a square matrix of size (n, n)");
-  PARAM_ASSERT(params.R.rows() == params.m && params.R.cols() == params.m,
-               "R must be a square matrix of size (m, m)");
-  PARAM_ASSERT(params.P.rows() == params.n && params.P.cols() == params.n,
-               "P must be a square matrix of size (n, n)");
-  PARAM_ASSERT(params.u_min_.size() == params.m,
-               "u_min_ size must be equal to m");
-  PARAM_ASSERT(params.u_max_.size() == params.m,
-               "u_max_ size must be equal to m");
+  RU_ASSERT(params.max_iter > 0,
+            "The maximum number of iterations must be greater than 0");
+  RU_ASSERT(params.f, "f must be a non-null function");
+  RU_ASSERT(params.df_dx, "df_dx must be a non-null function");
+  RU_ASSERT(params.df_du, "df_du must be a non-null function");
+  RU_ASSERT(params.Q.rows() == params_.n && params.Q.cols() == params_.n,
+            "Q must be a square matrix of size (n, n)");
+  RU_ASSERT(params.R.rows() == params_.m && params.R.cols() == params_.m,
+            "R must be a square matrix of size (m, m)");
+  RU_ASSERT(params.P.rows() == params_.n && params.P.cols() == params_.n,
+            "P must be a square matrix of size (n, n)");
+  RU_ASSERT(params.u_min.size() == params_.m, "u_min_ size must be equal to m");
+  RU_ASSERT(params.u_max.size() == params_.m, "u_max_ size must be equal to m");
 
+  size_t n = params_.n;
+  size_t m = params_.m;
+  size_t horizon = params_.horizon;
+  real_t dt = params_.dt;
   params_ = params;
-
-  S_bar_.resize(params_.n * params_.horizon, params_.m * params_.horizon);
-  T_bar_.resize(params_.n * params_.horizon, params_.n);
-  dU_bar_.resize(params_.horizon * params_.m);
-  lb_.resize(params_.horizon * params_.m);
-  ub_.resize(params_.horizon * params_.m);
+  params_.dt = dt;
+  params_.n = n;
+  params_.m = m;
+  params_.horizon = horizon;
+  params_.dt = dt;
 
   calcQBar();
 
@@ -288,9 +324,9 @@ void Ommpc::getPrimManifoldSpecificJacobian(
     const ManifoldBase<real_t>::HomeSpace& delta, Eigen::MatrixX<real_t>& G_x,
     Eigen::MatrixX<real_t>& G_f)
 {
-  PARAM_ASSERT(prim_m.dim() == delta.size(),
-               "Manifold dimension mismatch, expected %zu, got %zu",
-               prim_m.dim(), delta.size());
+  RU_ASSERT(prim_m.dim() == delta.size(),
+            "Manifold dimension mismatch, expected %zu, got %zu", prim_m.dim(),
+            delta.size());
 
   switch (prim_m.type()) {
     case ManifoldType::kEuclideanSpaceX:
@@ -312,7 +348,7 @@ void Ommpc::getPrimManifoldSpecificJacobian(
                 .transpose();
     } break;
     default:
-      PARAM_ASSERT(false, "Unsupported manifold type");
+      RU_ASSERT(false, "Unsupported manifold type");
       break;
   }
 }
@@ -324,8 +360,8 @@ void Ommpc::getJacobian(const StateVec& x_ref, const InputVec& u_ref,
   Eigen::MatrixX<real_t> G_x, G_f;
   Eigen::VectorX<real_t> delta = params_.f(x_ref, u_ref);
   getManifoldSpecificJacobian(x_ref, delta, G_x, G_f);
-  F_x = G_x + params_.dt * G_f * params_.f_dx(x_ref, u_ref);
-  F_u = params_.dt * G_f * params_.f_du(x_ref, u_ref);
+  F_x = G_x + params_.dt * G_f * params_.df_dx(x_ref, u_ref);
+  F_u = params_.dt * G_f * params_.df_du(x_ref, u_ref);
 }
 /* Private function definitions ----------------------------------------------*/
 }  // namespace robot_utils

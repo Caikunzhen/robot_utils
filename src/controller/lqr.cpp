@@ -28,6 +28,17 @@ namespace robot_utils
 /* Exported function definitions ---------------------------------------------*/
 
 template <typename T>
+Lqr<T>::Lqr(const Params& params)
+{
+  RU_ASSERT(params.n > 0, "n must be greater than 0");
+  RU_ASSERT(params.m > 0, "m must be greater than 0");
+
+  params_.n = params.n;
+  params_.m = params.m;
+  setParams(params);
+}
+
+template <typename T>
 bool Lqr<T>::solve(void)
 {
   if (data_.is_converged) {
@@ -38,14 +49,14 @@ bool Lqr<T>::solve(void)
   auto A_T = A.transpose();
   const auto& B = params_.B;
   auto B_T = B.transpose();
-  const auto& Q = params_.Q;
-  const auto& R = params_.R;
+  const auto Q = params_.Q.toDenseMatrix();
+  const auto R = params_.R.toDenseMatrix();
   auto& K = data_.K;
   auto& P = data_.P;
 
   data_.is_converged = false;
   for (size_t i = 0; i < params_.max_iter; ++i) {
-    K = (R + B_T * P * B).llt().solve(B_T * P * A);
+    K = (B_T * P * B).llt().solve(B_T * P * A);
     Eigen::MatrixX<T> A_cl = A - B * K;
     Eigen::MatrixX<T> Res = P - A_T * P * A_cl - Q;
 
@@ -67,26 +78,13 @@ bool Lqr<T>::solve(void)
 }
 
 template <typename T>
-void Lqr<T>::calc(const StateVec& x, InputVec& u) const
-{
-  PARAM_ASSERT(x.size() == params_.n, "x size must be equal to n");
-  PARAM_ASSERT(u.size() == params_.m, "u size must be equal to m");
-  if (!data_.is_converged) {
-    PARAM_ASSERT(false, "LQR not converged, call solve() first");
-    return;
-  }
-
-  u = -data_.K * x;
-}
-
-template <typename T>
 void Lqr<T>::calc(const StateVec& ref, const StateVec& fdb, InputVec& u) const
 {
-  PARAM_ASSERT(ref.size() == params_.n, "ref size must be equal to n");
-  PARAM_ASSERT(fdb.size() == params_.n, "fdb size must be equal to n");
-  PARAM_ASSERT(u.size() == params_.m, "u size must be equal to m");
+  RU_ASSERT(ref.size() == params_.n, "ref size must be equal to n");
+  RU_ASSERT(fdb.size() == params_.n, "fdb size must be equal to n");
+  RU_ASSERT(u.size() == params_.m, "u size must be equal to m");
   if (!data_.is_converged) {
-    PARAM_ASSERT(false, "LQR not converged, call solve() first");
+    RU_ASSERT(false, "LQR not converged, call solve() first");
     return;
   }
 
@@ -96,20 +94,22 @@ void Lqr<T>::calc(const StateVec& ref, const StateVec& fdb, InputVec& u) const
 template <typename T>
 void Lqr<T>::setParams(const Params& params)
 {
-  PARAM_ASSERT(params.n > 0, "n must be greater than 0");
-  PARAM_ASSERT(params.m > 0, "m must be greater than 0");
-  PARAM_ASSERT(params.max_iter > 0, "max_iter must be greater than 0");
-  PARAM_ASSERT(params.tol > 0, "tol must be greater than 0");
-  PARAM_ASSERT(params.A.rows() == params.n && params.A.cols() == params.n,
+  RU_ASSERT(params.max_iter > 0, "max_iter must be greater than 0");
+  RU_ASSERT(params.tol > 0, "tol must be greater than 0");
+  RU_ASSERT(params.A.rows() == params_.n && params.A.cols() == params_.n,
                "A must be a square matrix of size (n, n)");
-  PARAM_ASSERT(params.B.rows() == params.n && params.B.cols() == params.m,
+  RU_ASSERT(params.B.rows() == params_.n && params.B.cols() == params_.m,
                "B must be a matrix of size (n, m)");
-  PARAM_ASSERT(params.Q.rows() == params.n && params.Q.cols() == params.n,
+  RU_ASSERT(params.Q.rows() == params_.n && params.Q.cols() == params_.n,
                "Q must be a square matrix of size (n, n)");
-  PARAM_ASSERT(params.R.rows() == params.m && params.R.cols() == params.m,
+  RU_ASSERT(params.R.rows() == params_.m && params.R.cols() == params_.m,
                "R must be a square matrix of size (m, m)");
 
+  T n = params_.n;
+  T m = params_.m;
   params_ = params;
+  params_.n = n;
+  params_.m = m;
   data_.P = params_.Q;
   data_.res = std::numeric_limits<T>::max();
   data_.is_converged = false;

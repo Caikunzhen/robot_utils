@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
- * @file      : time.hpp
- * @brief     : This file provides the time function for robot_utils.
- * @history   :
- *  Version     Date            Author          Note
- *  V1.0.0      2025-04-30      Caikunzhen      1. Complete the time.hpp
- *******************************************************************************
- * @attention :
+ * @file time.hpp
+ * @brief This file provides the time function for robot_utils.
+ *
+ * @section history
+ *
+ * @version 1.0.0
+ * @date 2025-04-30
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the time.hpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
@@ -35,7 +38,6 @@ namespace robot_utils
  *
  * @tparam T Type of the time, should be floating point
  * @return The current time in seconds
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline T GetCurrTime(void)

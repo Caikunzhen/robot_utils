@@ -39,7 +39,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
     params.A.resize(params.n, params.n);
     std::vector<real_t> A_flat;
     node["A"].as<std::vector<real_t>>(A_flat);
-    PARAM_ASSERT(
+    RU_ASSERT(
         A_flat.size() == params.n * params.n,
         "A matrix size is not correct, expected size: %d, actual size: %d",
         params.n * params.n, A_flat.size());
@@ -54,7 +54,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
     params.B.resize(params.n, params.m);
     std::vector<real_t> B_flat;
     node["B"].as<std::vector<real_t>>(B_flat);
-    PARAM_ASSERT(
+    RU_ASSERT(
         B_flat.size() == params.n * params.m,
         "B matrix size is not correct, expected size: %d, actual size: %d",
         params.n * params.m, B_flat.size());
@@ -68,79 +68,92 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   params.Q.resize(params.n);
   std::vector<real_t> Q_diag;
   node["Q_diag"].as<std::vector<real_t>>(Q_diag);
-  PARAM_ASSERT(
-      Q_diag.size() == params.n,
-      "Q matrix size is not correct, expected size: %d, actual size: %d",
-      params.n, Q_diag.size());
+  RU_ASSERT(Q_diag.size() == params.n,
+            "Q matrix size is not correct, expected size: %d, actual size: %d",
+            params.n, Q_diag.size());
   for (size_t i = 0; i < params.n; ++i) {
     params.Q.diagonal()[i] = Q_diag[i];
-  }
-
-  params.R.resize(params.m);
-  std::vector<real_t> R_diag;
-  node["R_diag"].as<std::vector<real_t>>(R_diag);
-  PARAM_ASSERT(
-      R_diag.size() == params.m,
-      "R matrix size is not correct, expected size: %d, actual size: %d",
-      params.m, R_diag.size());
-  for (size_t i = 0; i < params.m; ++i) {
-    params.R.diagonal()[i] = R_diag[i];
   }
 
   params.P.resize(params.n);
   std::vector<real_t> P_diag;
   node["P_diag"].as<std::vector<real_t>>(P_diag);
-  PARAM_ASSERT(
-      P_diag.size() == params.n,
-      "P matrix size is not correct, expected size: %d, actual size: %d",
-      params.n, P_diag.size());
+  RU_ASSERT(P_diag.size() == params.n,
+            "P matrix size is not correct, expected size: %d, actual size: %d",
+            params.n, P_diag.size());
   for (size_t i = 0; i < params.n; ++i) {
     params.P.diagonal()[i] = P_diag[i];
   }
 
-  params.x_min_.resize(params.n);
+  params.R.resize(params.m);
+  std::vector<real_t> R_diag;
+  node["R_diag"].as<std::vector<real_t>>(R_diag);
+  RU_ASSERT(R_diag.size() == params.m,
+            "R matrix size is not correct, expected size: %d, actual size: %d",
+            params.m, R_diag.size());
+  for (size_t i = 0; i < params.m; ++i) {
+    params.R.diagonal()[i] = R_diag[i];
+  }
+
+  params.x_min.resize(params.n);
   std::vector<real_t> x_min;
   node["x_min"].as<std::vector<real_t>>(x_min);
-  PARAM_ASSERT(x_min.size() == params.n,
-               "x_min size is not correct, expected size: %d, actual size: %d",
-               params.n, x_min.size());
+  RU_ASSERT(x_min.size() == params.n,
+            "x_min size is not correct, expected size: %d, actual size: %d",
+            params.n, x_min.size());
   for (size_t i = 0; i < params.n; ++i) {
-    params.x_min_(i) = x_min[i];
+    params.x_min(i) = x_min[i];
   }
 
-  params.x_max_.resize(params.n);
+  params.x_max.resize(params.n);
   std::vector<real_t> x_max;
   node["x_max"].as<std::vector<real_t>>(x_max);
-  PARAM_ASSERT(x_max.size() == params.n,
-               "x_max size is not correct, expected size: %d, actual size: %d",
-               params.n, x_max.size());
+  RU_ASSERT(x_max.size() == params.n,
+            "x_max size is not correct, expected size: %d, actual size: %d",
+            params.n, x_max.size());
   for (size_t i = 0; i < params.n; ++i) {
-    params.x_max_(i) = x_max[i];
+    params.x_max(i) = x_max[i];
   }
 
-  params.u_min_.resize(params.m);
+  params.u_min.resize(params.m);
   std::vector<real_t> u_min;
   node["u_min"].as<std::vector<real_t>>(u_min);
-  PARAM_ASSERT(u_min.size() == params.m,
-               "u_min size is not correct, expected size: %d, actual size: %d",
-               params.m, u_min.size());
+  RU_ASSERT(u_min.size() == params.m,
+            "u_min size is not correct, expected size: %d, actual size: %d",
+            params.m, u_min.size());
   for (size_t i = 0; i < params.m; ++i) {
-    params.u_min_(i) = u_min[i];
+    params.u_min(i) = u_min[i];
   }
 
-  params.u_max_.resize(params.m);
+  params.u_max.resize(params.m);
   std::vector<real_t> u_max;
   node["u_max"].as<std::vector<real_t>>(u_max);
-  PARAM_ASSERT(u_max.size() == params.m,
-               "u_max size is not correct, expected size: %d, actual size: %d",
-               params.m, u_max.size());
+  RU_ASSERT(u_max.size() == params.m,
+            "u_max size is not correct, expected size: %d, actual size: %d",
+            params.m, u_max.size());
   for (size_t i = 0; i < params.m; ++i) {
-    params.u_max_(i) = u_max[i];
+    params.u_max(i) = u_max[i];
   }
 }
 
 Mpc::Mpc(const Params& params)
 {
+  RU_ASSERT(params.n > 0, "The number of states must be greater than 0");
+  RU_ASSERT(params.m > 0, "The number of inputs must be greater than 0");
+  RU_ASSERT(params.horizon > 0,
+            "The prediction horizon must be greater than 0");
+
+  params_.n = params.n;
+  params_.m = params.m;
+  params_.horizon = params.horizon;
+  const size_t& n = params_.n;
+  const size_t& m = params_.m;
+  const size_t& N = params_.horizon;
+  U_ = Eigen::VectorX<real_t>::Zero(m * N);
+  S_bar_ = Eigen::MatrixX<real_t>::Zero(n * N, m * N);
+  T_bar_ = Eigen::MatrixX<real_t>::Zero(n * N, n);
+  Q_bar_.resize(n * N);
+  R_bar_.resize(m * N);
   setParams(params);
 
   qpOASES::Options op;
@@ -151,9 +164,9 @@ Mpc::Mpc(const Params& params)
 
 bool Mpc::solve(const StateSeq& x_ref_seq, const StateVec& x0, bool force_init)
 {
-  PARAM_ASSERT(x_ref_seq.size() == params_.horizon,
-               "x_ref_seq size must be equal to horizon");
-  PARAM_ASSERT(x0.size() == params_.n, "x0 size must be equal to n");
+  RU_ASSERT(x_ref_seq.size() == params_.horizon,
+            "x_ref_seq size must be equal to horizon");
+  RU_ASSERT(x0.size() == params_.n, "x0 size must be equal to n");
 
   x0_ = x0;
   calcG(x_ref_seq);
@@ -162,6 +175,27 @@ bool Mpc::solve(const StateSeq& x_ref_seq, const StateVec& x0, bool force_init)
   qpOASES::returnValue ret;
 
   qpOASES::int_t nWSR = params_.max_iter;
+
+  /**
+   * solve the QP problem
+   *
+   * The QP problem is defined as:
+   *
+   * \f[
+   * \underset{^{qp}U}{\min}J = \frac{1}{2}\ ^{qp}U^T\ ^{qp}H\ ^{qp}U
+   * +\ ^{qp}U^T\ ^{qp}g
+   * \f]
+   *
+   * s.t.
+   *
+   * \f[
+   * ^{qp}b_{min} \leq\ ^{qp}A\ ^{qp}U \leq\ ^{qp}b_{max}
+   * \f]
+   *
+   * \f[
+   * ^{qp}U_{min} \leq\ ^{qp}U \leq\ ^{qp}U_{max}
+   * \f]
+   */
   if (!can_hot_start_ || force_init) {
     ret = qp_.init(H_.data(), g_.data(), A_.data(), lb_.data(), ub_.data(),
                    lbA_.data(), ubA_.data(), nWSR);
@@ -174,7 +208,7 @@ bool Mpc::solve(const StateSeq& x_ref_seq, const StateVec& x0, bool force_init)
   if (ret != qpOASES::SUCCESSFUL_RETURN) {
     solved_ = false;
   } else {
-    qp_.getPrimalSolution(U_bar_.data());
+    qp_.getPrimalSolution(U_.data());
     solved_ = true;
   }
 
@@ -188,31 +222,31 @@ void Mpc::getCtrl(InputVec& u, size_t forward_steps) const
   }
 
   if (!solved_) {
-    PARAM_ASSERT(false, "MPC has not been solved yet");
+    RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
-  u = U_bar_.segment(forward_steps * params_.m, params_.m);
+  u = U_.segment(forward_steps * params_.m, params_.m);
 }
 
 void Mpc::getCtrlSeq(CtrlSeq& u_seq) const
 {
   if (!solved_) {
-    PARAM_ASSERT(false, "MPC has not been solved yet");
+    RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
   u_seq.clear();
   for (size_t i = 0; i < params_.horizon; ++i) {
-    u_seq.emplace_back(U_bar_.segment(i * params_.m, params_.m));
+    u_seq.emplace_back(U_.segment(i * params_.m, params_.m));
   }
 }
 
 void Mpc::getPredStateSeq(StateSeq& x_seq) const
 {
   if (!solved_) {
-    PARAM_ASSERT(false, "MPC has not been solved yet");
+    RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
-  Eigen::VectorX<real_t> x_bar = S_bar_ * U_bar_ + T_bar_ * x0_;
+  Eigen::VectorX<real_t> x_bar = S_bar_ * U_ + T_bar_ * x0_;
   x_seq.clear();
 
   for (size_t i = 0; i < params_.horizon; ++i) {
@@ -222,34 +256,30 @@ void Mpc::getPredStateSeq(StateSeq& x_seq) const
 
 void Mpc::setParams(const Params& params)
 {
-  PARAM_ASSERT(params.n > 0, "The number of states must be greater than 0");
-  PARAM_ASSERT(params.m > 0, "The number of inputs must be greater than 0");
-  PARAM_ASSERT(params.horizon > 0,
-               "The prediction horizon must be greater than 0");
-  PARAM_ASSERT(params.max_iter > 0,
-               "The maximum number of iterations must be greater than 0");
-  PARAM_ASSERT(params.A.rows() == params.n && params.A.cols() == params.n,
-               "A must be a square matrix of size (n, n)");
-  PARAM_ASSERT(params.B.rows() == params.n && params.B.cols() == params.m,
-               "B must be a matrix of size (n, m)");
-  PARAM_ASSERT(params.Q.rows() == params.n && params.Q.cols() == params.n,
-               "Q must be a square matrix of size (n, n)");
-  PARAM_ASSERT(params.R.rows() == params.m && params.R.cols() == params.m,
-               "R must be a square matrix of size (m, m)");
-  PARAM_ASSERT(params.P.rows() == params.n && params.P.cols() == params.n,
-               "P must be a square matrix of size (n, n)");
-  PARAM_ASSERT(params.x_min_.size() == params.n,
-               "x_min_ size must be equal to n");
-  PARAM_ASSERT(params.x_max_.size() == params.n,
-               "x_max_ size must be equal to n");
-  PARAM_ASSERT(params.u_min_.size() == params.m,
-               "u_min_ size must be equal to m");
-  PARAM_ASSERT(params.u_max_.size() == params.m,
-               "u_max_ size must be equal to m");
+  RU_ASSERT(params.max_iter > 0,
+            "The maximum number of iterations must be greater than 0");
+  RU_ASSERT(params.A.rows() == params_.n && params.A.cols() == params_.n,
+            "A must be a square matrix of size (n, n)");
+  RU_ASSERT(params.B.rows() == params_.n && params.B.cols() == params_.m,
+            "B must be a matrix of size (n, m)");
+  RU_ASSERT(params.Q.rows() == params_.n && params.Q.cols() == params_.n,
+            "Q must be a square matrix of size (n, n)");
+  RU_ASSERT(params.R.rows() == params_.m && params.R.cols() == params_.m,
+            "R must be a square matrix of size (m, m)");
+  RU_ASSERT(params.P.rows() == params_.n && params.P.cols() == params_.n,
+            "P must be a square matrix of size (n, n)");
+  RU_ASSERT(params.x_min.size() == params_.n, "x_min_ size must be equal to n");
+  RU_ASSERT(params.x_max.size() == params_.n, "x_max_ size must be equal to n");
+  RU_ASSERT(params.u_min.size() == params_.m, "u_min_ size must be equal to m");
+  RU_ASSERT(params.u_max.size() == params_.m, "u_max_ size must be equal to m");
 
+  size_t n = params_.n;
+  size_t m = params_.m;
+  size_t horizon = params_.horizon;
   params_ = params;
-
-  U_bar_ = Eigen::VectorX<real_t>::Zero(params_.m * params_.horizon);
+  params_.n = n;
+  params_.m = m;
+  params_.horizon = horizon;
 
   calcSBar();
 
@@ -273,7 +303,6 @@ void Mpc::calcSBar(void)
   const size_t& N = params_.horizon;
   const size_t& n = params_.n;
   const size_t& m = params_.m;
-  S_bar_ = Eigen::MatrixX<real_t>::Zero(n * N, m * N);
   Eigen::MatrixX<real_t> A_i_x_B = params_.B;
   for (size_t i = 0; i < N; ++i) {
     for (size_t j = 0; j < N - i; ++j) {
@@ -290,7 +319,6 @@ void Mpc::calcTBar(void)
 {
   const size_t& N = params_.horizon;
   const size_t& n = params_.n;
-  T_bar_ = Eigen::MatrixX<real_t>::Zero(n * N, n);
   Eigen::MatrixX<real_t> A_i = Eigen::MatrixX<real_t>::Identity(n, n);
   for (size_t i = 0; i < N; ++i) {
     A_i = params_.A * A_i;
@@ -302,7 +330,6 @@ void Mpc::calcQBar(void)
 {
   const size_t& N = params_.horizon;
   const size_t& n = params_.n;
-  Q_bar_.resize(n * N);
   const auto& Q = params_.Q;
   const auto& P = params_.P;
 
@@ -317,7 +344,6 @@ void Mpc::calcRBar(void)
 {
   const size_t& N = params_.horizon;
   const size_t& m = params_.m;
-  R_bar_.resize(m * N);
   const auto& R = params_.R;
   R_bar_.diagonal() = R.diagonal().replicate(N, 1);
 }
@@ -333,8 +359,8 @@ void Mpc::calcG(const StateSeq& x_ref_seq)
   Eigen::VectorX<real_t> x_ref =
       Eigen::VectorX<real_t>::Zero(params_.n * params_.horizon);
   for (size_t i = 0; i < params_.horizon; ++i) {
-    PARAM_ASSERT(x_ref_seq[i].size() == params_.n,
-                 "x_ref_seq[%d] size must be equal to n", i);
+    RU_ASSERT(x_ref_seq[i].size() == params_.n,
+              "x_ref_seq[%d] size must be equal to n", i);
     x_ref.segment(i * params_.n, params_.n) = x_ref_seq[i];
   }
   g_ = S_bar_.transpose() * Q_bar_ * (T_bar_ * x0_ - x_ref);
@@ -342,8 +368,8 @@ void Mpc::calcG(const StateSeq& x_ref_seq)
 
 void Mpc::calcLbUb(void)
 {
-  lb_ = params_.u_min_.replicate(params_.horizon, 1);
-  ub_ = params_.u_max_.replicate(params_.horizon, 1);
+  lb_ = params_.u_min.replicate(params_.horizon, 1);
+  ub_ = params_.u_max.replicate(params_.horizon, 1);
 }
 
 void Mpc::calcLbAUbA(void)
@@ -352,8 +378,8 @@ void Mpc::calcLbAUbA(void)
   size_t& n = params_.n;
   size_t& m = params_.m;
 
-  Eigen::VectorX<real_t> x_bar_min = params_.x_min_.replicate(N, 1);
-  Eigen::VectorX<real_t> x_bar_max = params_.x_max_.replicate(N, 1);
+  Eigen::VectorX<real_t> x_bar_min = params_.x_min.replicate(N, 1);
+  Eigen::VectorX<real_t> x_bar_max = params_.x_max.replicate(N, 1);
 
   lbA_ = x_bar_min - T_bar_ * x0_;
   ubA_ = x_bar_max - T_bar_ * x0_;

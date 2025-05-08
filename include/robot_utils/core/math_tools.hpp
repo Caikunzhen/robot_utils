@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
- * @file      : math_tools.hpp
- * @brief     : This file provides the math tools for robot_utils.
- * @history   :
- *  Version     Date            Author          Note
- *  V1.0.0      2025-04-30      Caikunzhen      1. Complete the math_tools.hpp
- *******************************************************************************
- * @attention :
+ * @file math_tools.hpp
+ * @brief This file provides the math tools for robot_utils.
+ *
+ * @section history
+ *
+ * @version 1.0.0
+ * @date 2025-04-30
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the math_tools.hpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
@@ -25,7 +28,7 @@ namespace robot_utils
 {
 /* Exported constants --------------------------------------------------------*/
 
-//!< @brief Gravity acceleration(Hangzhou, China), m/s^2
+/// Gravity acceleration(Hangzhou, China), unit: m/s^2
 static constexpr double kGravAcc = 9.7936;
 static constexpr double kRad2DegCoff = 180.0 / M_PI;
 static constexpr double kDeg2RadCoff = M_PI / 180.0;
@@ -58,7 +61,7 @@ inline double Rad2Deg(double rad) { return rad * kRad2DegCoff; }
  * @param[in] val The value to be modded
  * @param[in] mod The modulus
  * @return The result of the modulus operation
- * @note When mod is not positive, the function returns the original value.
+ * @note When mod = 0, the function returns the original value.
  */
 template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
 inline T GenericMod(const T& val, const T& mod)
@@ -97,7 +100,6 @@ inline T GetSign(const T& val)
 
 /**
  * @brief Check if a value is in a specified range
- *
  * @tparam T Type of the value
  * @param[in] min_val Minimum value of the range
  * @param[in] max_val Maximum value of the range

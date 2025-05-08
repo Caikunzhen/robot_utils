@@ -30,43 +30,50 @@ namespace robot_utils
 /* Exported constants --------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
+/**
+ * @brief Parameters of basic PID controller
+ * @tparam T Type of the data (only provides float and double)
+ */
 template <typename T>
 struct PidNodeParams {
   static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>,
                 "PidNodeParams only supports float and double");
 
-  T kp = 0;
-  T ki = 0;
-  T kd = 0;
-  T ctrl_rate = 0;
+  T kp = 0;  ///< proportional gain, \f$K_p\f$
+  T ki = 0;  ///< integral gain, \f$K_i\f$
+  T kd = 0;  ///< derivative gain, \f$K_d\f$
+  T dt = 0;  ///< sampling time, \f$\Delta t\f$, unit: s
 
-  /*<! optimization parameters */
+  /* optimization parameters */
 
-  /*<! period of data, <= 0 means no periodic data */
+  /// period of data, \f$T\f$, \f$T\le 0\f$ means non periodic data
   T period = 0;
-  T out_limit_lb = 0;     //<! lower bound of output
-  T out_limit_ub = 0;     //<! upper bound of output
-  T deadband_lb = 0;      //<! lower bound of deadband
-  T deadband_ub = 0;      //<! upper bound of deadband
-  T anti_windup_lb = 0;   //<! lower bound of anti-windup
-  T anti_windup_up = 0;   //<! upper bound of anti-windup
-  T int_separate_lb = 0;  //<! lower bound of integral separate
-  T int_separate_ub = 0;  //<! upper bound of integral separate
-  /*<! weight of pervious difference, 0 means no previous difference, 1 means
-   * only previous difference */
+  T out_limit_lb = 0;    ///< lower bound of output, \f$u_{min}\f$
+  T out_limit_ub = 0;    ///< upper bound of output, \f$u_{max}\f$
+  T deadband_lb = 0;     ///< lower bound of deadband, \f$\epsilon_{min}\f$
+  T deadband_ub = 0;     ///< upper bound of deadband, \f$\epsilon_{max}\f$
+  T anti_windup_lb = 0;  ///< lower bound of anti-windup, \f$u_{min}^{i}\f$
+  T anti_windup_ub = 0;  ///< upper bound of anti-windup, \f$u_{max}^{i}\f$
+  /// lower bound of integral separate, \f$\epsilon_{min}^{i}\f$
+  T int_separate_lb = 0;
+  /// upper bound of integral separate, \f$\epsilon_{max}^{i}\f$
+  T int_separate_ub = 0;
+  /**
+   * weight of pervious difference, \f$w_{prev}^{d}\f$, 0 means no previous
+   * difference, 1 means only previous difference
+   */
   T perv_diff_weight = 0;
-  /*<! parameters of tracking-differentiator, td_params.period = period,
-   * td_params.dt = 1 / ctrl_rate */
-  TdParams<T> td_params;
+  /// cutoff frequency of tracking-differentiator, \f$r\f$, unit: Hz
+  T td_cutoff_freq = 0;
 
-  /*<! switch of optimization */
+  /* switch of optimization */
 
-  bool en_out_limit = false;     //<! enable output limit
-  bool en_deadband = false;      //<! enable deadband
-  bool en_trap_int = false;      //<! enable trapezoidal integral
-  bool en_anti_windup = false;   //<! enable anti-windup
-  bool en_int_separate = false;  //<! enable integral separate
-  bool en_td = false;            //<! enable tracking-differentiator
+  bool en_out_limit = false;     ///< enable output limit
+  bool en_deadband = false;      ///< enable deadband
+  bool en_trap_int = false;      ///< enable trapezoidal integral
+  bool en_anti_windup = false;   ///< enable anti-windup
+  bool en_int_separate = false;  ///< enable integral separate
+  bool en_td = false;            ///< enable tracking-differentiator
 
   /**
    * @brief Load parameters from YAML node
@@ -78,7 +85,7 @@ struct PidNodeParams {
    * kp: <value>
    * ki: <value>
    * kd: <value>
-   * ctrl_rate: <value>
+   * dt: <value>
    *
    * period: <value>
    * out_limit_lb: <value>
@@ -87,14 +94,11 @@ struct PidNodeParams {
    * deadband_ub: <value>
    * en_trap_int: <value>
    * anti_windup_lb: <value>
-   * anti_windup_up: <value>
+   * anti_windup_ub: <value>
    * int_separate_lb: <value>
    * int_separate_ub: <value>
    * perv_diff_weight: <value>
-   * td_params:
-   *  cutoff_freq: <value>
-   *  dt: <value>      # not used
-   *  period: <value>  # not used
+   * td_cutoff_freq: <value>
    *
    * en_out_limit: <value>
    * en_deadband: <value>
@@ -106,15 +110,13 @@ struct PidNodeParams {
    *
    * @param[in] node: YAML node containing the parameters
    * @param[out] params: PidNodeParams object to store the loaded parameters
-   * @return None
-   * @note None
    */
   static void LoadParamsFromYamlNode(YAML::Node& node, PidNodeParams& params)
   {
     params.kp = node["kp"].as<T>();
     params.ki = node["ki"].as<T>();
     params.kd = node["kd"].as<T>();
-    params.ctrl_rate = node["ctrl_rate"].as<T>();
+    params.dt = node["dt"].as<T>();
 
     params.period = node["period"].as<T>();
     params.out_limit_lb = node["out_limit_lb"].as<T>();
@@ -122,13 +124,11 @@ struct PidNodeParams {
     params.deadband_lb = node["deadband_lb"].as<T>();
     params.deadband_ub = node["deadband_ub"].as<T>();
     params.anti_windup_lb = node["anti_windup_lb"].as<T>();
-    params.anti_windup_up = node["anti_windup_up"].as<T>();
+    params.anti_windup_ub = node["anti_windup_ub"].as<T>();
     params.int_separate_lb = node["int_separate_lb"].as<T>();
     params.int_separate_ub = node["int_separate_ub"].as<T>();
     params.perv_diff_weight = node["perv_diff_weight"].as<T>();
-    TdParams<T>::LoadParamsFromYamlNode(node["td_params"], params.td_params);
-    params.td_params.period = params.period;
-    params.td_params.dt = 1 / params.ctrl_rate;
+    params.td_cutoff_freq = node["td_cutoff_freq"].as<T>();
 
     params.en_out_limit = node["en_out_limit"].as<bool>();
     params.en_deadband = node["en_deadband"].as<bool>();
@@ -148,7 +148,7 @@ struct PidNodeParams {
    * kp: <value>
    * ki: <value>
    * kd: <value>
-   * ctrl_rate: <value>
+   * dt: <value>
    *
    * period: <value>
    * out_limit_lb: <value>
@@ -157,14 +157,11 @@ struct PidNodeParams {
    * deadband_ub: <value>
    * en_trap_int: <value>
    * anti_windup_lb: <value>
-   * anti_windup_up: <value>
+   * anti_windup_ub: <value>
    * int_separate_lb: <value>
    * int_separate_ub: <value>
    * perv_diff_weight: <value>
-   * td_params:
-   *   cutoff_freq: <value>
-   *   dt: <value>     # not used
-   *   period: <value> # not used
+   * td_cutoff_freq: <value>
    *
    * en_out_limit: <value>
    * en_deadband: <value>
@@ -175,8 +172,6 @@ struct PidNodeParams {
    * ```
    *
    * @param[in] node: YAML node containing the parameters
-   * @return None
-   * @note None
    */
   static PidNodeParams LoadParamsFromYamlNode(YAML::Node& node)
   {
@@ -193,8 +188,6 @@ struct PidNodeParams {
  * other to form a complex PID controller. So it is not recommended to use it
  * alone.
  *
- * This class implements a PID controller with the following features:
- *
  * @tparam T Type of the data (only provides float and double)
  */
 template <typename T>
@@ -208,22 +201,25 @@ class PidNode
   using Ptr = std::shared_ptr<PidNode<T>>;
   using ConstPtr = std::shared_ptr<const PidNode<T>>;
 
+  /**
+   * @brief Data of basic PID controller
+   */
   struct Data {
-    T ref = 0;
-    T fdb = 0;
-    T err = 0;
-    T out = 0;
+    T ref = 0;  ///< reference value, \f$x_i^d\f$
+    T fdb = 0;  ///< feedback value, \f$x_i\f$
+    T err = 0;  ///< error value, \f$e_i\f$
+    T out = 0;  ///< output value, \f$u_i\f$
 
-    T prev_ref = 0;
-    T prev_fdb = 0;
-    T prev_err = 0;
-    T prev_out = 0;
+    T prev_ref = 0;  ///< previous reference value, \f$x_{i-1}^d\f$
+    T prev_fdb = 0;  ///< previous feedback value, \f$x_{i-1}\f$
+    T prev_err = 0;  ///< previous error value, \f$e_{i-1}\f$
+    T prev_out = 0;  ///< previous output value, \f$u_{i-1}\f$
 
-    T pout = 0;
-    T iout = 0;
-    T dout = 0;
+    T pout = 0;  ///< proportional output, \f$u_i^p\f$
+    T iout = 0;  ///< integral output, \f$u_i^i\f$
+    T dout = 0;  ///< derivative output, \f$u_i^d\f$
 
-    bool is_first_calc = true;
+    bool is_first_calc = true;  ///< whether the first calculation
   };
 
   explicit PidNode(const Params& params);
@@ -231,11 +227,93 @@ class PidNode
 
   /**
    * @brief Calculate the PID output
-   * @param[in] ref: reference value
-   * @param[in] fdb: feedback value
-   * @param[in] ffd: feedforward value
-   * @return PID output
-   * @note None
+   *
+   * Calculate the error
+   * \f[
+   * \hat e_i =
+   * \begin{cases}
+   * x_i^d - x_i, & T \leq 0 \\
+   * {\rm PeriodicDataSub}\left(T, x_i^d, x_i\right), & \text{else}
+   * \end{cases}
+   * \f]
+   *
+   * \f[
+   * e_i =
+   * \begin{cases}
+   * \hat e_i, & {\rm en\_deadband} = false \\
+   * {\rm Clamp}\left(\hat e_i, \epsilon_{min}, \epsilon_{max}\right), &
+   * \text{else}
+   * \end{cases}
+   * \f]
+   *
+   * Calculate the proportional term
+   * \f[
+   * u_i^p = K_p \cdot e_i
+   * \f]
+   *
+   * Calculate the integral term
+   * \f[
+   * \hat e_i^i =
+   * \begin{cases}
+   * e_i, & {\rm en\_trap\_int} = false \\
+   * \left(e_i + e_{i-1}\right)/2, & \text{else}
+   * \end{cases}
+   * \f]
+   *
+   * \f[
+   * e_i^i =
+   * \begin{cases}
+   * 0, & {\rm en\_int\_separate} = true \text{ and } e_i^i \notin
+   * [\epsilon_{min}^i, \epsilon_{max}^i] \\
+   * \hat e_i^i, & \text{else}
+   * \end{cases}
+   * \f]
+   *
+   * \f[
+   * u_i^i =
+   * \begin{cases}
+   * {\rm Clamp}\left(u_{i-1}^i + K_i \cdot \hat e_i^i \cdot \Delta t,
+   * u_{min}^i, u_{max}^i\right), & {\rm en\_anti\_windup} = true \\
+   * u_{i-1}^i + K_i \cdot \hat e_i^i \cdot \Delta t, & \text{else}
+   * \end{cases}
+   * \f]
+   *
+   * Calculate the derivative term
+   * \f[
+   * \hat e_i' =
+   * \begin{cases}
+   * \left(e_i - e_{i-1}\right)/\Delta t, & {\rm en\_td} = false \\
+   * {\rm Td}\left(r, dt, 0, e_i\right), & \text{else}
+   * \end{cases}
+   * \f]
+   *
+   * \f[
+   * x_i' =
+   * \begin{cases}
+   * \left(x_i - x_{i-1}\right)/\Delta t, & {\rm en\_td} = false \\
+   * {\rm Td}\left(r, dt, T, x_i\right), & \text{else}
+   * \end{cases}
+   * \f]
+   *
+   * \f[
+   * u_i^d = K_d \cdot \left(w_{prev}^d \cdot x_i' + \left(1 - w_{prev}^d\right)
+   * \cdot \hat e_i'\right)
+   * \f]
+   *
+   * Calculate the output
+   * \f[
+   * u_i =
+   * \begin{cases}
+   * {\rm Clamp}\left(u_i^p + u_i^i + u_i^d + u_i^{ff}, u_{min}, u_{max}\right),
+   * & {\rm en\_out\_limit} = true \\
+   * u_i^p + u_i^i + u_i^d + u_i^{ff}, & \text{else}
+   * \end{cases}
+   * \f]
+   *
+   * @param[in] ref: Reference value, \f$x_i^d\f$
+   * @param[in] fdb: Feedback value, \f$x_i\f$
+   * @param[in] ffd: Feedforward value, \f$u_i^{ff}\f$
+   * @return PID output, \f$u_i\f$
    */
   T calc(const T& ref, const T& fdb, const T& ffd = 0);
 
@@ -243,23 +321,28 @@ class PidNode
   {
     data_ = Data();
 
-    if (td_ptr_) {
-      td_ptr_->reset();
+    if (err_td_ptr_) {
+      err_td_ptr_->reset();
+      fdb_td_ptr_->reset();
     }
   }
 
+  /**
+   * @brief Set the parameters of the PID controller
+   * @param params Parameters of the PID controller
+   * @note params.dt and params.period will be ignored.
+   */
   void setParams(const Params& params);
   const Params& getParams(void) const { return params_; }
 
   const Data& getData(void) const { return data_; }
 
-  Td<T>::ConstPtr getTdPtr(void) const { return td_ptr_; }
-
  private:
   Params params_;
   Data data_;
 
-  Td<T>::Ptr td_ptr_;
+  Td<T>::Ptr err_td_ptr_ = nullptr;
+  Td<T>::Ptr fdb_td_ptr_ = nullptr;
 };
 
 extern template class PidNode<float>;

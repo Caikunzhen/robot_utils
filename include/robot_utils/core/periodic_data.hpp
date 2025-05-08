@@ -1,13 +1,15 @@
 /**
  *******************************************************************************
- * @file      : periodic_data.hpp
- * @brief     : This file provides functions for periodic data
- * @history   :
- *  Version     Date            Author          Note
- *  V1.0.0      2025-04-30      Caikunzhen      1. Complete the
- *                                                 periodic_data.hpp
- *******************************************************************************
- * @attention :
+ * @file periodic_data.hpp
+ * @brief This file provides functions for periodic data
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-04-30
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the periodic_data.hpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
@@ -41,7 +43,6 @@ namespace robot_utils
  * @param[in] lb The lower bound of the data
  * @param[in] data The data to be normalized
  * @return The normalized data
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_signed_v<T>>>
 inline T PeriodicDataNorm(const T& period, const T& lb, const T& data)
@@ -62,8 +63,6 @@ inline T PeriodicDataNorm(const T& period, const T& lb, const T& data)
  * @param[in] period The period of the data, should be positive
  * @param[in] lb The lower bound of the data
  * @param[in|out] data The data to be normalized, which is modified in place
- * @return None
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_signed_v<T>>>
 inline void PeriodicDataNorm(const T& period, const T& lb, T* data)
@@ -80,7 +79,6 @@ inline void PeriodicDataNorm(const T& period, const T& lb, T* data)
  * @param[in] period The period of the data, should be positive
  * @param[in] data The data to be normalized
  * @return The normalized data
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_signed_v<T>>>
 inline T PeriodicDataNorm(const T& period, const T& data)
@@ -96,8 +94,6 @@ inline T PeriodicDataNorm(const T& period, const T& data)
  * @tparam T Type of the data, should be signed
  * @param[in] period The period of the data, should be positive
  * @param[in|out] data The data to be normalized, which is modified in place
- * @return None
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_signed_v<T>>>
 inline void PeriodicDataNorm(const T& period, T* data)
@@ -116,7 +112,6 @@ inline void PeriodicDataNorm(const T& period, T* data)
  * @param[in] minuend The reference value
  * @param[in] subtrahend The data to be subtracted
  * @return The result of the subtraction
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_signed_v<T>>>
 inline T PeriodicDataSub(const T& period, const T& minuend, const T& subtrahend)
@@ -135,7 +130,6 @@ inline T PeriodicDataSub(const T& period, const T& minuend, const T& subtrahend)
  * @param[in] ref The reference value
  * @param[in] data The data to be transformed
  * @return The transformed data
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_signed_v<T>>>
 inline T PeriodicData2MinDist(const T& period, const T& ref, const T& data)
@@ -153,8 +147,6 @@ inline T PeriodicData2MinDist(const T& period, const T& ref, const T& data)
  * @param[in] period The period of the data, should be positive
  * @param[in] ref The reference value
  * @param[in|out] data The data to be transformed, which is modified in place
- * @return None
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_signed_v<T>>>
 inline void PeriodicData2MinDist(const T& period, const T& ref, T* data)
@@ -171,7 +163,6 @@ inline void PeriodicData2MinDist(const T& period, const T& ref, T* data)
  * @param[in] lb The lower bound of the angle
  * @param[in] angle The angle to be normalized
  * @return The normalized angle
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline T AngleRadNorm(const T& lb, const T& angle)
@@ -187,8 +178,6 @@ inline T AngleRadNorm(const T& lb, const T& angle)
  * @tparam T Type of the angle, should be floating point
  * @param[in] lb The lower bound of the angle
  * @param[in|out] angle The angle to be normalized, which is modified in place
- * @return None
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void AngleRadNorm(const T& lb, T* angle)
@@ -204,7 +193,6 @@ inline void AngleRadNorm(const T& lb, T* angle)
  * @tparam T Type of the angle, should be floating point
  * @param[in] angle The angle to be normalized
  * @return The normalized angle
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline T AngleRadNorm(const T& angle)
@@ -219,8 +207,6 @@ inline T AngleRadNorm(const T& angle)
  *
  * @tparam T Type of the angle, should be floating point
  * @param[in|out] angle The angle to be normalized, which is modified in place
- * @return None
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void AngleRadNorm(T* angle)
@@ -238,7 +224,6 @@ inline void AngleRadNorm(T* angle)
  * @param[in] minuend The reference value
  * @param[in] subtrahend The angle to be subtracted
  * @return The result of the subtraction
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline T AngleRadSub(const T& minuend, const T& subtrahend)
@@ -256,7 +241,6 @@ inline T AngleRadSub(const T& minuend, const T& subtrahend)
  * @param[in] ref The reference value
  * @param[in] data The data to be transformed
  * @return The transformed data
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline T AngleRad2MinDist(const T& ref, const T& data)
@@ -273,8 +257,6 @@ inline T AngleRad2MinDist(const T& ref, const T& data)
  * @tparam T Type of the data, should be floating point
  * @param[in] ref The reference value
  * @param[in|out] data The data to be transformed, which is modified in place
- * @return None
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void AngleRad2MinDist(const T& ref, T* data)
@@ -291,7 +273,6 @@ inline void AngleRad2MinDist(const T& ref, T* data)
  * @param[in] lb The lower bound of the angle
  * @param[in] angle The angle to be normalized
  * @return The normalized angle
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline T AngleDegNorm(const T& lb, const T& angle)
@@ -308,7 +289,6 @@ inline T AngleDegNorm(const T& lb, const T& angle)
  * @param[in] lb The lower bound of the angle
  * @param[in|out] angle The angle to be normalized, which is modified in place
  * @return None
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void AngleDegNorm(const T& lb, T* angle)
@@ -324,7 +304,6 @@ inline void AngleDegNorm(const T& lb, T* angle)
  * @tparam T Type of the angle, should be floating point
  * @param[in] angle The angle to be normalized
  * @return The normalized angle
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline T AngleDegNorm(const T& angle)
@@ -339,8 +318,6 @@ inline T AngleDegNorm(const T& angle)
  *
  * @tparam T Type of the angle, should be floating point
  * @param[in|out] angle The angle to be normalized, which is modified in place
- * @return None
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void AngleDegNorm(T* angle)
@@ -358,7 +335,6 @@ inline void AngleDegNorm(T* angle)
  * @param[in] minuend The reference value
  * @param[in] subtrahend The angle to be subtracted
  * @return The result of the subtraction
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline T AngleDegSub(const T& minuend, const T& subtrahend)
@@ -376,7 +352,6 @@ inline T AngleDegSub(const T& minuend, const T& subtrahend)
  * @param[in] ref The reference value
  * @param[in] data The data to be transformed
  * @return The transformed data
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline T AngleDeg2MinDist(const T& ref, const T& data)
@@ -394,7 +369,6 @@ inline T AngleDeg2MinDist(const T& ref, const T& data)
  * @param[in] ref The reference value
  * @param[in|out] data The data to be transformed, which is modified in place
  * @return None
- * @note None
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void AngleDeg2MinDist(const T& ref, T* data)

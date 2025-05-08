@@ -31,8 +31,12 @@ namespace robot_utils
 /* Exported function definitions ---------------------------------------------*/
 
 template <typename T>
-PidNode<T>::PidNode(const Params& params) : data_(), td_ptr_(nullptr)
+PidNode<T>::PidNode(const Params& params)
 {
+  RU_ASSERT(params.dt > 0, "dt must be greater than 0");
+
+  params_.dt = params.dt;
+  params_.period = params.period;
   setParams(params);
 
   reset();
@@ -41,12 +45,13 @@ PidNode<T>::PidNode(const Params& params) : data_(), td_ptr_(nullptr)
 template <typename T>
 T PidNode<T>::calc(const T& ref, const T& fdb, const T& ffd)
 {
-  const T dt = 1 / params_.ctrl_rate;
+  const T& dt = params_.dt;
   data_.prev_ref = data_.ref;
   data_.prev_fdb = data_.fdb;
   data_.prev_err = data_.err;
   data_.prev_out = data_.out;
 
+  // Calculate the error
   data_.ref = ref;
   data_.fdb = fdb;
   T err = 0;
@@ -67,33 +72,30 @@ T PidNode<T>::calc(const T& ref, const T& fdb, const T& ffd)
 
   // Calculate the integral term
   T err_i = params_.en_trap_int ? (data_.err + data_.prev_err) / 2 : data_.err;
-  T anti_windup_scale = 1;
-  if (params_.en_anti_windup) {
-    if (data_.iout > params_.anti_windup_up && err_i > 0) {
-      anti_windup_scale = 0;
-    } else if (data_.iout < params_.anti_windup_lb && err_i < 0) {
-      anti_windup_scale = 0;
-    }
-  }
-  T int_separate_scale = 1;
   if (params_.en_int_separate &&
       !IsInRange(params_.int_separate_lb, params_.int_separate_ub, err_i)) {
-    int_separate_scale = 0;
+    err_i = 0;
   }
-  data_.iout +=
-      params_.ki * err_i * dt * anti_windup_scale * int_separate_scale;
+  if (params_.en_anti_windup) {
+    data_.iout = std::clamp(data_.iout + params_.ki * err_i * dt,
+                            params_.anti_windup_lb, params_.anti_windup_ub);
+  } else {
+    data_.iout += params_.ki * err_i * dt;
+  }
 
   // Calculate the derivative term
-  T err_d = params_.perv_diff_weight * data_.fdb +
-            (1 - params_.perv_diff_weight) * data_.err;
+  T derr = 0, dfdb = 0;
   if (params_.en_td) {
-    data_.dout = params_.kd * td_ptr_->calc(err_d);
+    derr = err_td_ptr_->calc(data_.err);
+    dfdb = fdb_td_ptr_->calc(data_.fdb);
   } else {
-    T prev_err_d = params_.perv_diff_weight * data_.prev_fdb +
-                   (1 - params_.perv_diff_weight) * data_.prev_err;
-    data_.dout = params_.kd * (err_d - prev_err_d) / dt;
+    derr = (data_.err - data_.prev_err) / dt;
+    dfdb = (data_.fdb - data_.prev_fdb) / dt;
   }
+  data_.dout = params_.kd * (params_.perv_diff_weight * dfdb +
+                             (1 - params_.perv_diff_weight) * derr);
 
+  // Calculate the output
   if (params_.en_out_limit) {
     T out = data_.pout + data_.iout + data_.dout + ffd;
     data_.out = std::clamp(out, params_.out_limit_lb, params_.out_limit_ub);
@@ -107,36 +109,49 @@ T PidNode<T>::calc(const T& ref, const T& fdb, const T& ffd)
 template <typename T>
 void PidNode<T>::setParams(const Params& params)
 {
-  PARAM_ASSERT(params.kp >= 0, "kp must be greater than or equal to 0");
-  PARAM_ASSERT(params.ki >= 0, "ki must be greater than or equal to 0");
-  PARAM_ASSERT(params.kd >= 0, "kd must be greater than or equal to 0");
-  PARAM_ASSERT(params.ctrl_rate > 0, "ctrl_rate must be greater than 0");
-  PARAM_ASSERT(
+  RU_ASSERT(params.kp >= 0, "kp must be greater than or equal to 0");
+  RU_ASSERT(params.ki >= 0, "ki must be greater than or equal to 0");
+  RU_ASSERT(params.kd >= 0, "kd must be greater than or equal to 0");
+  RU_ASSERT(
       params_.en_out_limit && params_.out_limit_lb < params_.out_limit_ub,
       "out_limit_lb must be less than out_limit_ub");
-  PARAM_ASSERT(params_.en_deadband && params_.deadband_lb < params_.deadband_ub,
+  RU_ASSERT(params_.en_deadband && params_.deadband_lb < params_.deadband_ub,
                "deadband_lb must be less than deadband_ub");
-  PARAM_ASSERT(
-      params_.en_anti_windup && params_.anti_windup_lb < params_.anti_windup_up,
-      "anti_windup_lb must be less than anti_windup_up");
-  PARAM_ASSERT(params_.en_int_separate &&
+  RU_ASSERT(
+      params_.en_anti_windup && params_.anti_windup_lb < params_.anti_windup_ub,
+      "anti_windup_lb must be less than anti_windup_ub");
+  RU_ASSERT(params_.en_int_separate &&
                    params_.int_separate_lb < params_.int_separate_ub,
                "int_separate_lb must be less than int_separate_ub");
-  PARAM_ASSERT(params_.perv_diff_weight >= 0 && params_.perv_diff_weight <= 1,
+  RU_ASSERT(params_.perv_diff_weight >= 0 && params_.perv_diff_weight <= 1,
                "perv_diff_weight must be between 0 and 1");
 
+  T dt = params_.dt;
+  T period = params_.period;
   params_ = params;
-  params_.td_params.period = params_.period;
-  params_.td_params.dt = 1 / params_.ctrl_rate;
+  params_.dt = dt;
+  params_.period = period;
 
   if (params_.en_td) {
-    if (td_ptr_ == nullptr) {
-      td_ptr_ = std::make_shared<Td<T>>(params_.td_params);
+    TdParams<T> err_td_params{
+        .cutoff_freq = params_.td_cutoff_freq,
+        .dt = params_.dt,
+    };
+    TdParams<T> fdb_td_params{
+        .cutoff_freq = params_.td_cutoff_freq,
+        .dt = params_.dt,
+        .period = params_.period,
+    };
+    if (err_td_ptr_ == nullptr) {
+      err_td_ptr_ = std::make_shared<Td<T>>(err_td_params);
+      fdb_td_ptr_ = std::make_shared<Td<T>>(fdb_td_params);
     } else {
-      td_ptr_->setParams(params_.td_params);
+      err_td_ptr_->setParams(err_td_params);
+      fdb_td_ptr_->setParams(fdb_td_params);
     }
   } else {
-    td_ptr_ = nullptr;
+    err_td_ptr_ = nullptr;
+    fdb_td_ptr_ = nullptr;
   }
 }
 

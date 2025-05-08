@@ -1,12 +1,17 @@
 /**
  *******************************************************************************
- * @file      : assert.hpp
- * @brief     : This file provides the assert function for robot_utils.
- * @history   :
- *  Version     Date            Author          Note
- *  V1.0.0      2025-04-30      Caikunzhen      1. Complete the assert.hpp
+ * @file assert.hpp
+ * @brief This file provides the assert function for robot_utils.
+ *
+ * @section history
+ *
+ * @version 1.0.0
+ * @date 2025-04-30
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the assert.hpp
  *******************************************************************************
- * @attention :
+ * @attention
  * When CMAKE_BUILD_TYPE = Debug, the assert function will be enabled. When
  * CMAKE_BUILD_TYPE = Release, the assert function will be disabled unless
  * USE_RU_ASSERT is defined and set to 1.
@@ -25,12 +30,12 @@
 
 /* Exported macro ------------------------------------------------------------*/
 #if defined(USE_RU_ASSERT) && USE_RU_ASSERT
-#define PARAM_ASSERT(expr, format, ...) \
+#define RU_ASSERT(expr, format, ...) \
   ((expr)                               \
        ? (void)0U                       \
        : robot_utils::AssertFailed(__FILE__, __LINE__, format, ##__VA_ARGS__))
 #else
-#define PARAM_ASSERT(expr, format, ...) ((void)0U)
+#define RU_ASSERT(expr, format, ...) ((void)0U)
 #endif
 
 namespace robot_utils

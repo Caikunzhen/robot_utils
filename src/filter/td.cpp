@@ -31,6 +31,10 @@ namespace robot_utils
 template <typename T>
 Td<T>::Td(const Params& params)
 {
+  RU_ASSERT(params.dt > 0, "dt must be greater than 0");
+
+  params_.dt = params.dt;
+  params_.period = params.period;
   setParams(params);
 
   reset();
@@ -39,10 +43,13 @@ Td<T>::Td(const Params& params)
 template <typename T>
 void Td<T>::setParams(const Params& params)
 {
-  PARAM_ASSERT(params.cutoff_freq > 0, "cutoff_freq must be greater than 0");
-  PARAM_ASSERT(params.dt > 0, "dt must be greater than 0");
+  RU_ASSERT(params.cutoff_freq > 0, "cutoff_freq must be greater than 0");
 
+  T dt = params_.dt;
+  T period = params_.period;
   params_ = params;
+  params_.dt = dt;
+  params_.period = period;
 
   data_.is_first_calc = true;
 }

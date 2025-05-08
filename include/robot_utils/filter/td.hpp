@@ -29,17 +29,28 @@ namespace robot_utils
 /* Exported constants --------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
+/**
+ * @brief Parameters of tracking differentiator
+ * @tparam T Type of the data (only provides float and double)
+ */
 template <typename T>
 struct TdParams {
   static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>,
                 "TdParams only supports float and double");
 
-  T cutoff_freq = 0;  //<! cutoff frequency of tracking-differentiator
-  T dt = 0;           //<! sampling time
+  /**
+   * cutoff frequency of tracking-differentiator, \f$r\f$, unit: Hz
+   *
+   * @note Must be smaller than \f$0.5/\Delta t\f$, otherwise it is easy to
+   * cause divergence.
+   */
+  T cutoff_freq = 0;
+  T dt = 0;  ///< sampling time, \f$\Delta t\f$, unit: s
 
-  /*<! optimization parameters */
+  /* optimization parameters */
 
-  T period = 0;  //<! period of data, <= 0 means no periodic data
+  /// period of data, \f$T\f$, \f$T\le 0\f$ means non periodic data
+  T period = 0;
 
   /**
    * @brief Load parameters from YAML node
@@ -55,8 +66,6 @@ struct TdParams {
    *
    * @param[in] node: YAML node containing the parameters
    * @param[out] params: TdParams object to store the loaded parameters
-   * @return None
-   * @note None
    */
   static void LoadParamsFromYamlNode(YAML::Node& node, TdParams& params)
   {
@@ -79,7 +88,6 @@ struct TdParams {
    *
    * @param[in] node: YAML node containing the parameters
    * @return TdParams object containing the loaded parameters
-   * @note None
    */
   static TdParams LoadParamsFromYamlNode(YAML::Node& node)
   {
@@ -110,11 +118,15 @@ class Td
   using Ptr = std::shared_ptr<Td<T>>;
   using ConstPtr = std::shared_ptr<const Td<T>>;
 
+  /**
+   * @brief Data of tracking differentiator
+   */
   struct Data {
-    T x = 0;
+    T x = 0;  ///< the filtering result of the input signal, \f$\hat x\f$
+    /// the estimate derivative of the input signal, \f$\dot{\hat x}\f$
     T dx = 0;
 
-    bool is_first_calc = true;
+    bool is_first_calc = true;  ///< whether the first calculation
   };
 
   explicit Td(const Params& params);
@@ -126,20 +138,48 @@ class Td
    * This function calculates the derivative of the input signal using the
    * tracking differentiator algorithm.
    *
-   * @param[in] x: Input signal
-   * @return The estimated derivative of the input signal
-   * @note None
+   * \f[
+   * G\left(s\right) = \frac{r^2}{\left(s+r\right)^2}
+   * \f]
+   *
+   * \f[
+   * \hat X\left(s\right) = G\left(s\right) * X\left(s\right)
+   * \f]
+   *
+   * \f[
+   * \dot{\hat X}\left(s\right) = s * \hat X\left(s\right)
+   * \f]
+   *
+   * @param[in] x: Input signal, \f$x\f$
+   * @return The estimated derivative of the input signal, \f$\dot{\hat x}\f$
+   * @note It is recommended to call the @ref isDiverged method before using the
+   * result to determine whether it is diverged. If it is diverged, call the
+   * @ref reset method to reset the TD.
    */
   T calc(const T& x);
 
+  /**
+   * @brief Reset the TD
+   */
   void reset(void) { data_ = Data(); }
 
+  /**
+   * @brief Check if the TD is diverged
+   * @return true if the TD is diverged, false otherwise
+   * @note When the TD is diverged, the output may be NaN or Inf. In this case,
+   * it is recommended to call the @ref reset method to reset the TD.
+   */
   bool isDiverged(void) const
   {
     return std::isnan(data_.x) || std::isnan(data_.dx) || std::isinf(data_.x) ||
            std::isinf(data_.dx);
   }
 
+  /**
+   * @brief Set the parameters of the TD
+   * @param params Parameters of the TD
+   * @note params.dt and params.period will be ignored.
+   */
   void setParams(const Params& params);
   const Params& getParams(void) const { return params_; }
 

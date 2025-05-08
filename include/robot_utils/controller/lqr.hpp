@@ -33,20 +33,26 @@ namespace robot_utils
 /* Exported constants --------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
+/**
+ * @brief Parameters of LQR controller
+ * @tparam T Type of the data (only provides float and double)
+ */
 template <typename T>
 struct LqrParams {
   static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>,
                 "LqrParam only supports float and double");
 
-  size_t n = 0;                  //<! number of states
-  size_t m = 0;                  //<! number of inputs
-  size_t max_iter = 100;         //<! maximum number of iterations
-  T tol = static_cast<T>(1e-6);  //<! tolerance for convergence
+  using DiagMatX = Eigen::DiagonalMatrix<T, Eigen::Dynamic>;
 
-  Eigen::MatrixX<T> A;  //<! system matrix, size (n, n)
-  Eigen::MatrixX<T> B;  //<! input matrix, size (n, m)
-  Eigen::MatrixX<T> Q;  //<! state cost matrix, size (n, n)
-  Eigen::MatrixX<T> R;  //<! input cost matrix, size (m, m)
+  size_t n = 0;                  ///< number of states, \f$n\f$
+  size_t m = 0;                  ///< number of inputs, \f$m\f$
+  size_t max_iter = 100;         ///< maximum number of iterations
+  T tol = static_cast<T>(1e-6);  ///< tolerance for convergence
+
+  Eigen::MatrixX<T> A;  ///< system matrix, \f$A \in \mathbb{R}^{n \times n}\f$
+  Eigen::MatrixX<T> B;  ///< input matrix, \f$B \in \mathbb{R}^{n \times m}\f$
+  DiagMatX Q;  ///< state cost matrix, \f$Q \in \mathbb{R}^{n \times n}\f$
+  DiagMatX R;  ///< input cost matrix, \f$R \in \mathbb{R}^{m \times m}\f$
 
   /**
    * @brief Load parameters from YAML node
@@ -67,7 +73,6 @@ struct LqrParams {
    *
    * @param[in] node: YAML node containing the parameters
    * @param[out] params: LQR parameters
-   * @return None
    */
   static void LoadParamsFromYamlNode(const YAML::Node& node, LqrParams& params)
   {
@@ -80,7 +85,7 @@ struct LqrParams {
       params.A.resize(params.n, params.n);
       std::vector<T> A_flat;
       node["A"].as<std::vector<T>>(A_flat);
-      PARAM_ASSERT(
+      RU_ASSERT(
           A_flat.size() == params.n * params.n,
           "A matrix size is not correct, expected size: %d, actual size: %d",
           params.n * params.n, A_flat.size());
@@ -95,7 +100,7 @@ struct LqrParams {
       params.B.resize(params.n, params.m);
       std::vector<T> B_flat;
       node["B"].as<std::vector<T>>(B_flat);
-      PARAM_ASSERT(
+      RU_ASSERT(
           B_flat.size() == params.n * params.m,
           "B matrix size is not correct, expected size: %d, actual size: %d",
           params.n * params.m, B_flat.size());
@@ -108,24 +113,24 @@ struct LqrParams {
 
     std::vector<T> Q_diag;
     node["Q_diag"].as<std::vector<T>>(Q_diag);
-    params.Q = Eigen::MatrixX<T>::Zero(params.n, params.n);
-    PARAM_ASSERT(
+    params.Q.resize(params.n);
+    RU_ASSERT(
         Q_diag.size() == params.n,
         "Q matrix size is not correct, expected size: %d, actual size: %d",
         params.n, Q_diag.size());
     for (size_t i = 0; i < params.n; ++i) {
-      params.Q(i, i) = Q_diag[i];
+      params.Q.diagonal()[i] = Q_diag[i];
     }
 
     std::vector<T> R_diag;
     node["R_diag"].as<std::vector<T>>(R_diag);
-    params.R = Eigen::MatrixX<T>::Zero(params.m, params.m);
-    PARAM_ASSERT(
+    params.R.resize(params.m);
+    RU_ASSERT(
         R_diag.size() == params.m,
         "R matrix size is not correct, expected size: %d, actual size: %d",
         params.m, R_diag.size());
     for (size_t i = 0; i < params.m; ++i) {
-      params.R(i, i) = R_diag[i];
+      params.R.diagonal()[i] = R_diag[i];
     }
   }
 
@@ -157,6 +162,24 @@ struct LqrParams {
   }
 };
 
+/**
+ * @brief LQR controller
+ *
+ * System dynamics:
+ *
+ * \f[
+ * x_{k+1} = Ax_k + Bu_k
+ * \f]
+ *
+ * Cost function:
+ *
+ * \f[
+ * J = \sum_{k=0}^{\infty} \left(\left(x^d - x_k\right)^T Q \left(x^d -
+ * x_k\right) + u_k^T R u_k\right)
+ * \f]
+ *
+ * @tparam T Type of the data (only provides float and double)
+ */
 template <typename T>
 class Lqr
 {
@@ -168,66 +191,64 @@ class Lqr
   using Params = LqrParams<T>;
   using Ptr = std::shared_ptr<Lqr>;
   using ConstPtr = std::shared_ptr<const Lqr>;
-  using StateVec = Eigen::VectorX<T>;  //<! state vector, size (n, 1)
-  using InputVec = Eigen::VectorX<T>;  //<! input vector, size (m, 1)
+  /// state vector, \f$x \in \mathbb{R}^n\f$
+  using StateVec = Eigen::VectorX<T>;
+  /// input vector, \f$u \in \mathbb{R}^m\f$
+  using InputVec = Eigen::VectorX<T>;
 
   struct Data {
-    Eigen::MatrixX<T> K;  //<! feedback gain matrix, size (m, n)
-    Eigen::MatrixX<T> P;  //<! solution to the Riccati equation, size (n, n)
-    T res = std::numeric_limits<T>::max();  //<! residual of the cost function
-    bool is_converged = false;              //<! true if converged, false if not
+    /// feedback gain matrix, \f$K \in \mathbb{R}^{m \times n}\f$
+    Eigen::MatrixX<T> K;
+    /// solution to the Riccati equation, \f$P \in \mathbb{R}^{n \times n}\f$
+    Eigen::MatrixX<T> P;
+    T res = std::numeric_limits<T>::max();  ///< residual of the cost function
+    bool is_converged = false;
   };
 
-  explicit Lqr(const Params& params) { setParams(params); }
+  explicit Lqr(const Params& params);
   virtual ~Lqr(void) = default;
 
   /**
-   * @brief Calculate the LQR feedback gain
+   * @brief Solve the LQR problem
    * @return true if converged, false if not
-   * @note None
    */
   bool solve(void);
 
   /**
    * @brief Calculate the LQR control input
-   * @param[in] x: state vector, size (n, 1)
-   * @param[out] u: control input vector, size (m, 1)
-   * @note Call solve() before calling this function and it must be converged.
-   * Otherwise, the result is undefined.
-   */
-  void calc(const StateVec& x, InputVec& u) const;
-
-  /**
-   * @brief Calculate the LQR control input
-   * @param[in] ref: reference state vector, size (n, 1)
-   * @param[in] fdb: feedback state vector, size (n, 1)
-   * @param[out] u: control input vector, size (m, 1)
-   * @note Call solve() before calling this function and it must be converged.
-   * Otherwise, the result is undefined.
+   *
+   * This function calculates the LQR control input using the reference state
+   * vector and the feedback state vector. The LQR control input is calculated
+   * as:
+   *
+   * \f[
+   * u_k = K \cdot \left(x^d - x_k\right)
+   * \f]
+   *
+   * @param[in] ref: reference state vector, \f$x^d \in \mathbb{R}^n\f$
+   * @param[in] fdb: feedback state vector, \f$x_k \in \mathbb{R}^n\f$
+   * @param[out] u: control input vector, \f$u_k \in \mathbb{R}^m\f$
+   * @note Call @ref solve before calling this function and it must be
+   * converged. Otherwise, the result is undefined.
    */
   void calc(const StateVec& ref, const StateVec& fdb, InputVec& u) const;
 
   /**
    * @brief Calculate the LQR control input
-   * @param[in] x: state vector, size (n, 1)
-   * @return control input vector, size (m, 1)
-   * @note Call solve() before calling this function and it must be converged.
-   * Otherwise, the result is undefined.
-   */
-  InputVec calc(const StateVec& x) const
-  {
-    InputVec u;
-    calc(x, u);
-    return u;
-  }
-
-  /**
-   * @brief Calculate the LQR control input
-   * @param[in] ref: reference state vector, size (n, 1)
-   * @param[in] fdb: feedback state vector, size (n, 1)
-   * @return control input vector, size (m, 1)
-   * @note Call solve() before calling this function and it must be converged.
-   * Otherwise, the result is undefined.
+   *
+   * This function calculates the LQR control input using the reference state
+   * vector and the feedback state vector. The LQR control input is calculated
+   * as:
+   *
+   * \f[
+   * u_k = K \cdot \left(x^d - x_k\right)
+   * \f]
+   *
+   * @param[in] ref: reference state vector, \f$x^d \in \mathbb{R}^n\f$
+   * @param[in] fdb: feedback state vector, \f$x_k \in \mathbb{R}^n\f$
+   * @return control input vector, \f$u_k \in \mathbb{R}^m\f$
+   * @note Call @ref solve before calling this function and it must be
+   * converged. Otherwise, the result is undefined.
    */
   InputVec calc(const StateVec& ref, const StateVec& fdb) const
   {
@@ -236,6 +257,11 @@ class Lqr
     return u;
   }
 
+  /**
+   * @brief Set the parameters of the LQR controller
+   * @param params LQR parameters
+   * @note params.n and params.m will be ignored.
+   */
   void setParams(const Params& params);
   const Params& getParams(void) const { return params_; }
 
