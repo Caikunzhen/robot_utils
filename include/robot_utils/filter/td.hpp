@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
- * @file      : td.hpp
- * @brief     :
- * @history   :
- *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
- *******************************************************************************
- * @attention :
+ * @file td.hpp
+ * @brief Tracking Differentiator
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-05-08
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the td.hpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
@@ -67,7 +70,7 @@ struct TdParams {
    * @param[in] node: YAML node containing the parameters
    * @param[out] params: TdParams object to store the loaded parameters
    */
-  static void LoadParamsFromYamlNode(YAML::Node& node, TdParams& params)
+  static void LoadParamsFromYamlNode(const YAML::Node& node, TdParams& params)
   {
     params.cutoff_freq = node["cutoff_freq"].as<T>();
     params.dt = node["dt"].as<T>();
@@ -89,7 +92,7 @@ struct TdParams {
    * @param[in] node: YAML node containing the parameters
    * @return TdParams object containing the loaded parameters
    */
-  static TdParams LoadParamsFromYamlNode(YAML::Node& node)
+  static TdParams LoadParamsFromYamlNode(const YAML::Node& node)
   {
     TdParams params;
     LoadParamsFromYamlNode(node, params);
