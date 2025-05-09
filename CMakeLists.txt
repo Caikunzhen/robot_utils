@@ -23,11 +23,25 @@ find_package(Eigen3 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(qpOASES QUIET)
 
+file(GLOB_RECURSE ROBOT_UTILS_INCLUDE
+  include/*.hpp
+)
 file(GLOB_RECURSE ROBOT_UTILS_SRC
   src/*.cpp
 )
+if (NOT qpOASES_FOUND)
+list(REMOVE_ITEM ROBOT_UTILS_INCLUDE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/robot_utils/controller/mpc.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/robot_utils/controller/ommpc.hpp
+)
+list(REMOVE_ITEM ROBOT_UTILS_SRC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/mpc.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/controller/ommpc.cpp
+)
+endif()
 
 add_library(${PROJECT_NAME}
+  ${ROBOT_UTILS_INCLUDE}
   ${ROBOT_UTILS_SRC}
 )
 
@@ -35,7 +49,7 @@ target_link_libraries(
   ${PROJECT_NAME}
   PUBLIC
     Eigen3::Eigen
-    yaml-cpp
+    yaml-cpp::yaml-cpp
 )
 
 target_include_directories(
@@ -56,10 +70,5 @@ if (qpOASES_FOUND)
     ${PROJECT_NAME}
     PUBLIC
       qpOASES
-  )
-  target_compile_definitions(
-    ${PROJECT_NAME}
-    PUBLIC
-      HAS_QPOASES
   )
 endif()
