@@ -1,19 +1,21 @@
 /**
  *******************************************************************************
- * @file      : mpc.cpp
- * @brief     :
- * @history   :
- *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
- *******************************************************************************
- * @attention :
+ * @file mpc.cpp
+ * @brief Model Predictive Control (MPC) controller
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-05-10
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the mpc.cpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
  *******************************************************************************
  */
 
-#ifdef HAS_QPOASES
 /* Includes ------------------------------------------------------------------*/
 #include "robot_utils/controller/mpc.hpp"
 /* Private macro -------------------------------------------------------------*/
@@ -37,8 +39,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
 
   if (node["A"]) {
     params.A.resize(params.n, params.n);
-    std::vector<real_t> A_flat;
-    node["A"].as<std::vector<real_t>>(A_flat);
+    std::vector<real_t> A_flat = node["A"].as<std::vector<real_t>>();
     RU_ASSERT(
         A_flat.size() == params.n * params.n,
         "A matrix size is not correct, expected size: %d, actual size: %d",
@@ -52,8 +53,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
 
   if (node["B"]) {
     params.B.resize(params.n, params.m);
-    std::vector<real_t> B_flat;
-    node["B"].as<std::vector<real_t>>(B_flat);
+    std::vector<real_t> B_flat = node["B"].as<std::vector<real_t>>();
     RU_ASSERT(
         B_flat.size() == params.n * params.m,
         "B matrix size is not correct, expected size: %d, actual size: %d",
@@ -66,8 +66,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.Q.resize(params.n);
-  std::vector<real_t> Q_diag;
-  node["Q_diag"].as<std::vector<real_t>>(Q_diag);
+  std::vector<real_t> Q_diag = node["Q_diag"].as<std::vector<real_t>>();
   RU_ASSERT(Q_diag.size() == params.n,
             "Q matrix size is not correct, expected size: %d, actual size: %d",
             params.n, Q_diag.size());
@@ -76,8 +75,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.P.resize(params.n);
-  std::vector<real_t> P_diag;
-  node["P_diag"].as<std::vector<real_t>>(P_diag);
+  std::vector<real_t> P_diag = node["P_diag"].as<std::vector<real_t>>();
   RU_ASSERT(P_diag.size() == params.n,
             "P matrix size is not correct, expected size: %d, actual size: %d",
             params.n, P_diag.size());
@@ -86,8 +84,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.R.resize(params.m);
-  std::vector<real_t> R_diag;
-  node["R_diag"].as<std::vector<real_t>>(R_diag);
+  std::vector<real_t> R_diag = node["R_diag"].as<std::vector<real_t>>();
   RU_ASSERT(R_diag.size() == params.m,
             "R matrix size is not correct, expected size: %d, actual size: %d",
             params.m, R_diag.size());
@@ -96,8 +93,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.x_min.resize(params.n);
-  std::vector<real_t> x_min;
-  node["x_min"].as<std::vector<real_t>>(x_min);
+  std::vector<real_t> x_min = node["x_min"].as<std::vector<real_t>>();
   RU_ASSERT(x_min.size() == params.n,
             "x_min size is not correct, expected size: %d, actual size: %d",
             params.n, x_min.size());
@@ -106,8 +102,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.x_max.resize(params.n);
-  std::vector<real_t> x_max;
-  node["x_max"].as<std::vector<real_t>>(x_max);
+  std::vector<real_t> x_max = node["x_max"].as<std::vector<real_t>>();
   RU_ASSERT(x_max.size() == params.n,
             "x_max size is not correct, expected size: %d, actual size: %d",
             params.n, x_max.size());
@@ -116,8 +111,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.u_min.resize(params.m);
-  std::vector<real_t> u_min;
-  node["u_min"].as<std::vector<real_t>>(u_min);
+  std::vector<real_t> u_min = node["u_min"].as<std::vector<real_t>>();
   RU_ASSERT(u_min.size() == params.m,
             "u_min size is not correct, expected size: %d, actual size: %d",
             params.m, u_min.size());
@@ -126,8 +120,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.u_max.resize(params.m);
-  std::vector<real_t> u_max;
-  node["u_max"].as<std::vector<real_t>>(u_max);
+  std::vector<real_t> u_max = node["u_max"].as<std::vector<real_t>>();
   RU_ASSERT(u_max.size() == params.m,
             "u_max size is not correct, expected size: %d, actual size: %d",
             params.m, u_max.size());
@@ -137,6 +130,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
 }
 
 Mpc::Mpc(const Params& params)
+    : qp_(params.m * params.horizon, params.n * params.horizon)
 {
   RU_ASSERT(params.n > 0, "The number of states must be greater than 0");
   RU_ASSERT(params.m > 0, "The number of inputs must be greater than 0");
@@ -202,7 +196,7 @@ bool Mpc::solve(const StateSeq& x_ref_seq, const StateVec& x0, bool force_init)
     can_hot_start_ = true;
   } else {
     ret = qp_.hotstart(g_.data(), lb_.data(), ub_.data(), lbA_.data(),
-                       ub_.data(), nWSR);
+                       ubA_.data(), nWSR);
   }
 
   if (ret != qpOASES::SUCCESSFUL_RETURN) {
@@ -386,5 +380,3 @@ void Mpc::calcLbAUbA(void)
 }
 /* Private function definitions ----------------------------------------------*/
 }  // namespace robot_utils
-
-#endif /* HAS_QPOASES */

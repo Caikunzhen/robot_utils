@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
- * @file      : mpc.hpp
- * @brief     :
- * @history   :
- *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
- *******************************************************************************
- * @attention :
+ * @file mpc.hpp
+ * @brief Model Predictive Control (MPC) controller
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-05-10
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the mpc.hpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.

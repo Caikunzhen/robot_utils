@@ -13,7 +13,6 @@
  *******************************************************************************
  */
 
-#ifdef HAS_QPOASES
 /* Includes ------------------------------------------------------------------*/
 #include "robot_utils/controller/ommpc.hpp"
 
@@ -39,8 +38,7 @@ void OmmpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   params.dt = node["dt"].as<real_t>();
 
   params.Q.resize(params.n);
-  std::vector<real_t> Q_diag;
-  node["Q_diag"].as<std::vector<real_t>>(Q_diag);
+  std::vector<real_t> Q_diag = node["Q_diag"].as<std::vector<real_t>>();
   RU_ASSERT(Q_diag.size() == params.n,
             "Q matrix size is not correct, expected size: %d, actual size: %d",
             params.n, Q_diag.size());
@@ -49,8 +47,7 @@ void OmmpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.P.resize(params.n);
-  std::vector<real_t> P_diag;
-  node["P_diag"].as<std::vector<real_t>>(P_diag);
+  std::vector<real_t> P_diag = node["P_diag"].as<std::vector<real_t>>();
   RU_ASSERT(P_diag.size() == params.n,
             "P matrix size is not correct, expected size: %d, actual size: %d",
             params.n, P_diag.size());
@@ -59,8 +56,7 @@ void OmmpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.R.resize(params.m);
-  std::vector<real_t> R_diag;
-  node["R_diag"].as<std::vector<real_t>>(R_diag);
+  std::vector<real_t> R_diag = node["R_diag"].as<std::vector<real_t>>();
   RU_ASSERT(R_diag.size() == params.m,
             "R matrix size is not correct, expected size: %d, actual size: %d",
             params.m, R_diag.size());
@@ -69,8 +65,7 @@ void OmmpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.u_min.resize(params.m);
-  std::vector<real_t> u_min;
-  node["u_min"].as<std::vector<real_t>>(u_min);
+  std::vector<real_t> u_min = node["u_min"].as<std::vector<real_t>>();
   RU_ASSERT(u_min.size() == params.m,
             "u_min size is not correct, expected size: %d, actual size: %d",
             params.m, u_min.size());
@@ -79,8 +74,7 @@ void OmmpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 
   params.u_max.resize(params.m);
-  std::vector<real_t> u_max;
-  node["u_max"].as<std::vector<real_t>>(u_max);
+  std::vector<real_t> u_max = node["u_max"].as<std::vector<real_t>>();
   RU_ASSERT(u_max.size() == params.m,
             "u_max size is not correct, expected size: %d, actual size: %d",
             params.m, u_max.size());
@@ -89,7 +83,7 @@ void OmmpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   }
 }
 
-Ommpc::Ommpc(const Params& params)
+Ommpc::Ommpc(const Params& params) : qp_(params.m * params.horizon, 0)
 {
   RU_ASSERT(params.n > 0, "The number of states must be greater than 0");
   RU_ASSERT(params.m > 0, "The number of inputs must be greater than 0");
@@ -365,5 +359,3 @@ void Ommpc::getJacobian(const StateVec& x_ref, const InputVec& u_ref,
 }
 /* Private function definitions ----------------------------------------------*/
 }  // namespace robot_utils
-
-#endif /* HAS_QPOASES */

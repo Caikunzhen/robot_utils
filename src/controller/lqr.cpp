@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
- * @file      : lqr.cpp
- * @brief     :
- * @history   :
- *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
- *******************************************************************************
- * @attention :
+ * @file lqr.cpp
+ * @brief Linear Quadratic Regulator (LQR) controller
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-05-10
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the lqr.cpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
@@ -46,9 +49,9 @@ bool Lqr<T>::solve(void)
   }
 
   const auto& A = params_.A;
-  auto A_T = A.transpose();
+  const auto A_T = A.transpose();
   const auto& B = params_.B;
-  auto B_T = B.transpose();
+  const auto B_T = B.transpose();
   const auto Q = params_.Q.toDenseMatrix();
   const auto R = params_.R.toDenseMatrix();
   auto& K = data_.K;
@@ -56,9 +59,9 @@ bool Lqr<T>::solve(void)
 
   data_.is_converged = false;
   for (size_t i = 0; i < params_.max_iter; ++i) {
-    K = (B_T * P * B).llt().solve(B_T * P * A);
+    K = (R + B_T * P * B).ldlt().solve(B_T * P * A);
     Eigen::MatrixX<T> A_cl = A - B * K;
-    Eigen::MatrixX<T> Res = P - A_T * P * A_cl - Q;
+    Eigen::MatrixX<T> Res = A_T * P * A_cl + Q - P;
 
     data_.res = Res.cwiseAbs().maxCoeff();
     if (data_.res < params_.tol) {
@@ -68,8 +71,8 @@ bool Lqr<T>::solve(void)
 
     Eigen::MatrixX<T> DeltaP = Res;
     Eigen::MatrixX<T> A_cl_T = A_cl.transpose();
-    for (size_t j = 0; j < 10; ++j) {
-      DeltaP += A_cl_T * DeltaP * A_cl + Res;
+    for (size_t j = 0; j < 100; ++j) {
+      DeltaP = A_cl_T * DeltaP * A_cl + Res;
     }
     P += DeltaP;
   }
@@ -97,13 +100,13 @@ void Lqr<T>::setParams(const Params& params)
   RU_ASSERT(params.max_iter > 0, "max_iter must be greater than 0");
   RU_ASSERT(params.tol > 0, "tol must be greater than 0");
   RU_ASSERT(params.A.rows() == params_.n && params.A.cols() == params_.n,
-               "A must be a square matrix of size (n, n)");
+            "A must be a square matrix of size (n, n)");
   RU_ASSERT(params.B.rows() == params_.n && params.B.cols() == params_.m,
-               "B must be a matrix of size (n, m)");
+            "B must be a matrix of size (n, m)");
   RU_ASSERT(params.Q.rows() == params_.n && params.Q.cols() == params_.n,
-               "Q must be a square matrix of size (n, n)");
+            "Q must be a square matrix of size (n, n)");
   RU_ASSERT(params.R.rows() == params_.m && params.R.cols() == params_.m,
-               "R must be a square matrix of size (m, m)");
+            "R must be a square matrix of size (m, m)");
 
   T n = params_.n;
   T m = params_.m;

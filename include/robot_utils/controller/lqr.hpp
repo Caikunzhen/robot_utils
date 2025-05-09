@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
- * @file      : lqr.hpp
- * @brief     :
- * @history   :
- *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
- *******************************************************************************
- * @attention :
+ * @file lqr.hpp
+ * @brief Linear Quadratic Regulator (LQR) controller
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-05-10
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the lqr.hpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
@@ -83,8 +86,7 @@ struct LqrParams {
 
     if (node["A"]) {
       params.A.resize(params.n, params.n);
-      std::vector<T> A_flat;
-      node["A"].as<std::vector<T>>(A_flat);
+      std::vector<T> A_flat = node["A"].as<std::vector<T>>();
       RU_ASSERT(
           A_flat.size() == params.n * params.n,
           "A matrix size is not correct, expected size: %d, actual size: %d",
@@ -98,8 +100,7 @@ struct LqrParams {
 
     if (node["B"]) {
       params.B.resize(params.n, params.m);
-      std::vector<T> B_flat;
-      node["B"].as<std::vector<T>>(B_flat);
+      std::vector<T> B_flat = node["B"].as<std::vector<T>>();
       RU_ASSERT(
           B_flat.size() == params.n * params.m,
           "B matrix size is not correct, expected size: %d, actual size: %d",
@@ -111,8 +112,7 @@ struct LqrParams {
       }
     }
 
-    std::vector<T> Q_diag;
-    node["Q_diag"].as<std::vector<T>>(Q_diag);
+    std::vector<T> Q_diag = node["Q_diag"].as<std::vector<T>>();
     params.Q.resize(params.n);
     RU_ASSERT(
         Q_diag.size() == params.n,
@@ -122,8 +122,7 @@ struct LqrParams {
       params.Q.diagonal()[i] = Q_diag[i];
     }
 
-    std::vector<T> R_diag;
-    node["R_diag"].as<std::vector<T>>(R_diag);
+    std::vector<T> R_diag = node["R_diag"].as<std::vector<T>>();
     params.R.resize(params.m);
     RU_ASSERT(
         R_diag.size() == params.m,
@@ -252,7 +251,7 @@ class Lqr
    */
   InputVec calc(const StateVec& ref, const StateVec& fdb) const
   {
-    InputVec u;
+    InputVec u(params_.m);
     calc(ref, fdb, u);
     return u;
   }
