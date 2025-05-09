@@ -15,7 +15,6 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef ROBOT_UTILS_CONTROLLER_MPC_HPP_
 #define ROBOT_UTILS_CONTROLLER_MPC_HPP_
-#ifdef HAS_QPOASES
 
 /* Includes ------------------------------------------------------------------*/
 #include <yaml-cpp/yaml.h>
@@ -160,9 +159,7 @@ class Mpc
   using ConstPtr = std::shared_ptr<const Mpc>;
 
   using real_t = qpOASES::real_t;
-  /// state vector, \f$x \in \mathbb{R}^n\f$
   using StateVec = Eigen::VectorX<real_t>;
-  /// input vector, \f$u \in \mathbb{R}^m\f$
   using InputVec = Eigen::VectorX<real_t>;
   using DiagMatX = Eigen::DiagonalMatrix<real_t, Eigen::Dynamic>;
   using CtrlSeq = std::vector<InputVec>;
@@ -179,10 +176,10 @@ class Mpc
    * solve the problem. The function returns true if the problem is solved
    * successfully, and false otherwise.
    *
-   * @param[in] x_ref_seq: sequence of reference state vector, \f$x_{1:N}^d =
-   * \left[x_1^d, x_2^d, \ldots, x_N^d\right]\f$
-   * @param[in] x0: initial state vector, \f$x_0 \in \mathbb{R}^n\f$
-   * @param[in] force_init: whether to force re-initialization of the QP solver
+   * @param[in] x_ref_seq: Sequence of reference state vector, \f$x_{1:N}^d =
+   * \left[x_1^d, x_2^d, \ldots, x_N^d\right], x_i^d \in \mathbb{R}^n\f$
+   * @param[in] x0: Initial state vector, \f$x_0 \in \mathbb{R}^n\f$
+   * @param[in] force_init: Whether to force re-initialization of the QP solver
    * @return true if the problem is solved successfully, false otherwise
    */
   bool solve(const StateSeq& x_ref_seq, const StateVec& x0,
@@ -190,8 +187,8 @@ class Mpc
 
   /**
    * @brief Get the input vector
-   * @param[out] u: input vector, \f$u_f \in \mathbb{R}^m\f$
-   * @param[in] forward_steps: number of forward steps, \f$f\f$, when it is
+   * @param[out] u: Input vector, \f$u_f \in \mathbb{R}^m\f$
+   * @param[in] forward_steps: Number of forward steps, \f$f\f$, when it is
    * greater than horizon - 1, it will be set to horizon - 1
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined.
@@ -200,9 +197,9 @@ class Mpc
 
   /**
    * @brief Get the input vector
-   * @param[in] forward_steps: number of forward steps, \f$f\f$, when it is
+   * @param[in] forward_steps: Number of forward steps, \f$f\f$, when it is
    * greater than horizon - 1, it will be set to horizon - 1
-   * @return input vector, \f$u_f \in \mathbb{R}^m\f$
+   * @return Input vector, \f$u_f \in \mathbb{R}^m\f$
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined.
    */
@@ -215,8 +212,8 @@ class Mpc
 
   /**
    * @brief Get the control sequence
-   * @param[out] u_seq: control sequence, \f$u_{0:N-1} =
-   * \left[u_0, u_1, \ldots, u_{N-1}\right]\f$
+   * @param[out] u_seq: Control sequence, \f$u_{0:N-1} =
+   * \left[u_0, u_1, \ldots, u_{N-1}\right]\f, u_i \in \mathbb{R}^m\f$
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined.
    */
@@ -224,8 +221,8 @@ class Mpc
 
   /**
    * @brief Get the control sequence
-   * @return control sequence, \f$u_{0:N-1} =
-   * \left[u_0, u_1, \ldots, u_{N-1}\right]\f$
+   * @return Control sequence, \f$u_{0:N-1} =
+   * \left[u_0, u_1, \ldots, u_{N-1}\right], u_i \in \mathbb{R}^m\f$
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined.
    */
@@ -238,8 +235,8 @@ class Mpc
 
   /**
    * @brief Get the predicted state sequence
-   * @param[out] x_seq: state sequence, \f$x_{1:N} =
-   * \left[x_1, x_2, \ldots, x_{N}\right]\f$
+   * @param[out] x_seq: State sequence, \f$x_{1:N} =
+   * \left[x_1, x_2, \ldots, x_{N}\right], x_i \in \mathbb{R}^n\f$
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined.
    */
@@ -247,8 +244,8 @@ class Mpc
 
   /**
    * @brief Get the predicted state sequence
-   * @return state sequence, \f$x_{1:N} =
-   * \left[x_1, x_2, \ldots, x_{N}\right]\f$
+   * @return State sequence, \f$x_{1:N} =
+   * \left[x_1, x_2, \ldots, x_{N}\right], x_i \in \mathbb{R}^n\f$
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined.
    */
@@ -261,8 +258,7 @@ class Mpc
 
   /**
    * @brief Set the parameters of the MPC controller
-   * @param params MPC parameters
-   * @note params.n, params.m and params.horizon will be ignored.
+   * @param params: MPC parameters(`n`, `m` and `horizon` will be ignored)
    */
   void setParams(const Params& params);
   const Params& getParams(void) const { return params_; }
@@ -313,7 +309,7 @@ class Mpc
   /// upper bound vector for constraints, \f$^{qp}b_{max} \in \mathbb{R}^{nN}\f$
   Eigen::VectorX<real_t> ubA_;
   /**
-   * input vector, \f$^{qp}U = \left[u_0^T, u_1^T, \ldots,
+   * @brief input vector, \f$^{qp}U = \left[u_0^T, u_1^T, \ldots,
    * u_{N-1}^T\right]^T \in \mathbb{R}^{mN}\f$
    */
   Eigen::VectorX<real_t> U_;
@@ -326,5 +322,4 @@ class Mpc
 /* Exported function prototypes ----------------------------------------------*/
 }  // namespace robot_utils
 
-#endif /* HAS_QPOASES */
 #endif /* ROBOT_UTILS_CONTROLLER_MPC_HPP_ */

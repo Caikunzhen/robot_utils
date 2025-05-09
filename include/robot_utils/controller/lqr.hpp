@@ -225,9 +225,9 @@ class Lqr
    * u_k = K \cdot \left(x^d - x_k\right)
    * \f]
    *
-   * @param[in] ref: reference state vector, \f$x^d \in \mathbb{R}^n\f$
-   * @param[in] fdb: feedback state vector, \f$x_k \in \mathbb{R}^n\f$
-   * @param[out] u: control input vector, \f$u_k \in \mathbb{R}^m\f$
+   * @param[in] ref: Reference state vector, \f$x^d \in \mathbb{R}^n\f$
+   * @param[in] fdb: Feedback state vector, \f$x_k \in \mathbb{R}^n\f$
+   * @param[out] u: Control input vector, \f$u_k \in \mathbb{R}^m\f$
    * @note Call @ref solve before calling this function and it must be
    * converged. Otherwise, the result is undefined.
    */
@@ -244,9 +244,9 @@ class Lqr
    * u_k = K \cdot \left(x^d - x_k\right)
    * \f]
    *
-   * @param[in] ref: reference state vector, \f$x^d \in \mathbb{R}^n\f$
-   * @param[in] fdb: feedback state vector, \f$x_k \in \mathbb{R}^n\f$
-   * @return control input vector, \f$u_k \in \mathbb{R}^m\f$
+   * @param[in] ref: Reference state vector, \f$x^d \in \mathbb{R}^n\f$
+   * @param[in] fdb: Feedback state vector, \f$x_k \in \mathbb{R}^n\f$
+   * @return Control input vector, \f$u_k \in \mathbb{R}^m\f$
    * @note Call @ref solve before calling this function and it must be
    * converged. Otherwise, the result is undefined.
    */
@@ -259,8 +259,7 @@ class Lqr
 
   /**
    * @brief Set the parameters of the LQR controller
-   * @param params LQR parameters
-   * @note params.n and params.m will be ignored.
+   * @param params: LQR parameters(`n` and `m` will be ignored)
    */
   void setParams(const Params& params);
   const Params& getParams(void) const { return params_; }

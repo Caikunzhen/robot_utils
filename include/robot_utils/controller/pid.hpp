@@ -42,50 +42,7 @@ struct CascadedPidBaseParams {
                 "CascadedPidBaseParams only supports float and double");
 
   T dt = 0;          ///< sampling time, \f$\Delta t\f$, unit: s
-  size_t n_pid = 0;  ///< number of pid nodes
-
-  /**
-   * @brief Load parameters from YAML node
-   *
-   * This function loads the parameters from the given YAML node. The
-   * parameters are expected to be in the following format:
-   *
-   * ```yaml
-   * dt: <value>
-   * n_pid: <value>
-   * ```
-   *
-   * @param[in] node: YAML node containing the parameters
-   * @param[out] params: CascadedPidBaseParams object to store the loaded
-   * parameters
-   */
-  static void LoadParamsFromYamlNode(YAML::Node& node,
-                                     CascadedPidBaseParams& params)
-  {
-    params.dt = node["dt"].as<T>();
-    params.n_pid = node["n_pid"].as<size_t>();
-  }
-
-  /**
-   * @brief Load parameters from YAML node
-   *
-   * This function loads the parameters from the given YAML node. The
-   * parameters are expected to be in the following format:
-   *
-   * ```yaml
-   * dt: <value>
-   * n_pid: <value>
-   * ```
-   *
-   * @param[in] node: YAML node containing the parameters
-   * @return CascadedPidBaseParams object containing the loaded parameters
-   */
-  static CascadedPidBaseParams LoadParamsFromYamlNode(YAML::Node& node)
-  {
-    CascadedPidBaseParams params;
-    LoadParamsFromYamlNode(node, params);
-    return params;
-  }
+  size_t n_pid = 0;  ///< number of pid nodes, \f$n\f$
 };
 
 /**
@@ -97,7 +54,9 @@ struct CascadedPidParams : public CascadedPidBaseParams<T> {
   static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>,
                 "CascadedPidParams only supports float and double");
 
-  std::vector<PidNodeParams<T>> node_params;  ///< parameters of pid nodes
+  using NodeParamsList = std::vector<PidNodeParams<T>>;
+
+  NodeParamsList node_params_list;  ///< parameters of pid nodes
 
   /**
    * @brief Load parameters from YAML node
@@ -109,7 +68,7 @@ struct CascadedPidParams : public CascadedPidBaseParams<T> {
    * dt: <value>
    * n_pid: <value>
    *
-   * node_params:
+   * node_params_list:
    *   - kp: <value>
    *     ki: <value>
    *     kd: <value>
@@ -139,24 +98,23 @@ struct CascadedPidParams : public CascadedPidBaseParams<T> {
    *
    * @param[in] node: YAML node containing the parameters
    * @param[out] params: CascadedPidParams object to store the loaded
-   * parameters
-   * @note The size of the node_params vector should be equal to @ref
-   * CascadedPidParams::n_pid, and node_params[i].dt will be set to @ref
-   * CascadedPidParams::dt.
+   * parameters(the size of `node_params_list` should be equal `n_pid`
+   * and `node_params_list[*].dt` will be set to `dt`)
    */
-  static void LoadParamsFromYamlNode(YAML::Node& node,
+  static void LoadParamsFromYamlNode(const YAML::Node& node,
                                      CascadedPidParams& params)
   {
-    CascadedPidBaseParams<T>::LoadParamsFromYamlNode(node, params);
-    params.pid_node_params.reserve(params.n_pid);
+    params.dt = node["dt"].as<T>();
+    params.n_pid = node["n_pid"].as<size_t>();
+    params.node_params_list.reserve(params.n_pid);
 
-    RU_ASSERT(params.n_pid == node["node_params"].size(),
-                 "The size of node_params should be equal to n_pid");
+    RU_ASSERT(params.n_pid == node["node_params_list"].size(),
+              "The size of node_params_list should be equal to n_pid");
 
     for (size_t i = 0; i < params.n_pid; ++i) {
-      PidNodeParams<T>::LoadParamsFromYamlNode(node["node_params"][i],
-                                               params.node_params[i]);
-      params.node_params[i].dt = params.dt;
+      PidNodeParams<T>::LoadParamsFromYamlNode(node["node_params_list"][i],
+                                               params.node_params_list[i]);
+      params.node_params_list[i].dt = params.dt;
     }
   }
 
@@ -170,7 +128,7 @@ struct CascadedPidParams : public CascadedPidBaseParams<T> {
    * dt: <value>
    * n_pid: <value>
    *
-   * node_params:
+   * node_params_list:
    *   - kp: <value>
    *     ki: <value>
    *     kd: <value>
@@ -198,12 +156,11 @@ struct CascadedPidParams : public CascadedPidBaseParams<T> {
    * ```
    *
    * @param[in] node: YAML node containing the parameters
-   * @return CascadedPidParams object containing the loaded parameters
-   * @note The size of the node_params vector should be equal to @ref
-   * CascadedPidParams::n_pid, and node_params[i].dt will be set to @ref
-   * CascadedPidParams::dt.
+   * @return CascadedPidParams object containing the loaded parameters(the size
+   * of `node_params_list` should be equal to `n_pid` and
+   * `node_params_list[*].dt` will be set to `dt`)
    */
-  static CascadedPidParams LoadParamsFromYamlNode(YAML::Node& node)
+  static CascadedPidParams LoadParamsFromYamlNode(const YAML::Node& node)
   {
     CascadedPidParams params;
     LoadParamsFromYamlNode(node, params);
@@ -219,61 +176,9 @@ struct ParallelPidBaseParams {
   T dt = 0;            ///< sampling time, \f$\Delta t\f$, unit: s
   T out_limit_lb = 0;  ///< lower bound of output, \f$u_{min}\f$
   T out_limit_ub = 0;  ///< upper bound of output, \f$u_{max}\f$
-  size_t n_pid = 0;    ///< number of pid nodes
+  size_t n_pid = 0;    ///< number of pid nodes, \f$n\f$
 
   bool en_out_limit = false;
-
-  /**
-   * @brief Load parameters from YAML node
-   *
-   * This function loads the parameters from the given YAML node. The
-   * parameters are expected to be in the following format:
-   *
-   * ```yaml
-   * dt: <value>
-   * out_limit_lb: <value>
-   * out_limit_ub: <value>
-   * n_pid: <value>
-   * en_out_limit: <value>
-   * ```
-   *
-   * @param[in] node: YAML node containing the parameters
-   * @param[out] params: ParallelPidParams object to store the loaded
-   * parameters
-   */
-  static void LoadParamsFromYamlNode(YAML::Node& node,
-                                     ParallelPidBaseParams& params)
-  {
-    params.dt = node["dt"].as<T>();
-    params.out_limit_lb = node["out_limit_lb"].as<T>();
-    params.out_limit_ub = node["out_limit_ub"].as<T>();
-    params.n_pid = node["n_pid"].as<size_t>();
-    params.en_out_limit = node["en_out_limit"].as<bool>();
-  }
-
-  /**
-   * @brief Load parameters from YAML node
-   *
-   * This function loads the parameters from the given YAML node. The
-   * parameters are expected to be in the following format:
-   *
-   * ```yaml
-   * dt: <value>
-   * out_limit_lb: <value>
-   * out_limit_ub: <value>
-   * n_pid: <value>
-   * en_out_limit: <value>
-   * ```
-   *
-   * @param[in] node: YAML node containing the parameters
-   * @return ParallelPidParams object containing the loaded parameters
-   */
-  static ParallelPidBaseParams LoadParamsFromYamlNode(YAML::Node& node)
-  {
-    ParallelPidBaseParams params;
-    LoadParamsFromYamlNode(node, params);
-    return params;
-  }
 };
 
 template <typename T>
@@ -281,7 +186,9 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
   static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>,
                 "ParallelPidParams only supports float and double");
 
-  std::vector<PidNodeParams<T>> node_params;  ///< parameters of pid nodes
+  using NodeParamsList = std::vector<PidNodeParams<T>>;
+
+  NodeParamsList node_params_list;  ///< parameters of pid nodes
 
   /**
    * @brief Load parameters from YAML node
@@ -296,7 +203,7 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
    * n_pid: <value>
    * en_out_limit: <value>
    *
-   * node_params:
+   * node_params_list:
    *   - kp: <value>
    *     ki: <value>
    *     kd: <value>
@@ -309,7 +216,7 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
    *     deadband_ub: <value>
    *     en_trap_int: <value>
    *     anti_windup_lb: <value>
-   *     anti_windup_up: <value>
+   *     anti_windup_ub: <value>
    *     int_separate_lb: <value>
    *     int_separate_ub: <value>
    *     perv_diff_weight: <value>
@@ -326,24 +233,26 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
    *
    * @param[in] node: YAML node containing the parameters
    * @param[out] params: ParallelPidNodeParams object to store the loaded
-   * parameters
-   * @note The size of the node_params vector should be equal to @ref
-   * ParallelPidParams::n_pid, and node_params[i].dt will be set to @ref
-   * ParallelPidParams::dt.
+   * parameters(the size of the `node_params_list` vector should be equal to
+   * `n_pid`, and `node_params_list[*].dt` will be set to `dt`)
    */
-  static void LoadParamsFromYamlNode(YAML::Node& node,
+  static void LoadParamsFromYamlNode(const YAML::Node& node,
                                      ParallelPidParams& params)
   {
-    ParallelPidBaseParams<T>::LoadParamsFromYamlNode(node, params);
-    params.node_params.reserve(params.n_pid);
+    params.dt = node["dt"].as<T>();
+    params.out_limit_lb = node["out_limit_lb"].as<T>();
+    params.out_limit_ub = node["out_limit_ub"].as<T>();
+    params.n_pid = node["n_pid"].as<size_t>();
+    params.en_out_limit = node["en_out_limit"].as<bool>();
+    params.node_params_list.reserve(params.n_pid);
 
-    RU_ASSERT(params.n_pid == node["node_params"].size(),
-                 "The size of node_params should be equal to n_pid");
+    RU_ASSERT(params.n_pid == node["node_params_list"].size(),
+              "The size of node_params_list should be equal to n_pid");
 
     for (size_t i = 0; i < params.n_pid; ++i) {
-      PidNodeParams<T>::LoadParamsFromYamlNode(node["node_params"][i],
-                                               params.node_params[i]);
-      params.node_params[i].dt = params.dt;
+      PidNodeParams<T>::LoadParamsFromYamlNode(node["node_params_list"][i],
+                                               params.node_params_list[i]);
+      params.node_params_list[i].dt = params.dt;
     }
   }
 
@@ -360,7 +269,7 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
    * n_pid: <value>
    * en_out_limit: <value>
    *
-   * node_params:
+   * node_params_list:
    *   - kp: <value>
    *     ki: <value>
    *     kd: <value>
@@ -373,7 +282,7 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
    *     deadband_ub: <value>
    *     en_trap_int: <value>
    *     anti_windup_lb: <value>
-   *     anti_windup_up: <value>
+   *     anti_windup_ub: <value>
    *     int_separate_lb: <value>
    *     int_separate_ub: <value>
    *     perv_diff_weight: <value>
@@ -389,12 +298,11 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
    * ```
    *
    * @param[in] node: YAML node containing the parameters
-   * @return ParallelPidNodeParams object containing the loaded parameters
-   * @note The size of the node_params vector should be equal to @ref
-   * ParallelPidParams::n_pid, and node_params[i].dt will be set to @ref
-   * ParallelPidParams::dt.
+   * @return ParallelPidNodeParams object containing the loaded parameters(the
+   * size of the `node_params_list` vector should be equal to `n_pid`, and
+   * `node_params_list[*].dt` will be set to `dt`)
    */
-  static ParallelPidParams LoadParamsFromYamlNode(YAML::Node& node)
+  static ParallelPidParams LoadParamsFromYamlNode(const YAML::Node& node)
   {
     ParallelPidParams params;
     LoadParamsFromYamlNode(node, params);
@@ -423,17 +331,16 @@ class CascadedPid
   using Ptr = std::shared_ptr<CascadedPid<T>>;
   using ConstPtr = std::shared_ptr<const CascadedPid<T>>;
 
-  /// feedback vector, size = @ref BaseParams::n_pid
+  /// feedback vector
   using FdbVec = Eigen::VectorX<T>;
-  /// feedforward vector, size = @ref BaseParams::n_pid
+  /// feedforward vector
   using FfdVec = Eigen::VectorX<T>;
 
   /**
    * @brief Constructor of the cascaded PID controller
-   * @param params Parameters of the cascaded PID controller
-   * @note The size of the node_params vector should be equal to @ref
-   * BaseParams::n_pid, and node_params[i].dt will be set to @ref
-   * BaseParams::dt.
+   * @param params Parameters of the cascaded PID controller(the size of
+   * `node_params_list` should be equal to `n_pid`, and `node_params_list[*].dt`
+   * will be set to `dt`)
    */
   explicit CascadedPid(const Params& params);
   virtual ~CascadedPid(void) = default;
@@ -455,10 +362,10 @@ class CascadedPid
    * \f${\rm PidNode}\f$ is a function that calculates the output of the PID
    * node, defined in @ref PidNode::calc
    *
-   * @param[in] ref: reference value, \f$x^d\f$
-   * @param[in] fdb_vec: feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
-   * x_{n}\right]^T\f$, size = @ref BaseParams::n_pid
-   * @return output value, \f$u\f$
+   * @param[in] ref: Reference value, \f$x^d\f$
+   * @param[in] fdb_vec: Feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
+   * x_{n}\right]^T\f$, size = \f$n\f$
+   * @return Output value, \f$u\f$
    */
   T calc(const T& ref, const FdbVec& fdb_vec);
 
@@ -479,12 +386,12 @@ class CascadedPid
    * \f${\rm PidNode}\f$ is a function that calculates the output of the PID
    * node, defined in @ref PidNode::calc
    *
-   * @param[in] ref: reference value, \f$x^d\f$
-   * @param[in] fdb_vec: feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
-   * x_{n}\right]^T\f$, size = @ref BaseParams::n_pid
-   * @param[in] ffd_vec: feedforward vector, \f$\vec{u}^{ff} = \left[u_1^{ff},
-   * u_2^{ff}, \dots, u_n^{ff}\right]^T\f$, size = @ref BaseParams::n_pid
-   * @return output value, \f$u\f$
+   * @param[in] ref: Reference value, \f$x^d\f$
+   * @param[in] fdb_vec: Feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
+   * x_{n}\right]^T\f$, size = \f$n\f$
+   * @param[in] ffd_vec: Feedforward vector, \f$\vec{u}^{ff} = \left[u_1^{ff},
+   * u_2^{ff}, \dots, u_n^{ff}\right]^T\f$, size = \f$n\f$
+   * @return Output value, \f$u\f$
    */
   T calc(const T& ref, const FdbVec& fdb_vec, const FfdVec& ffd_vec);
 
@@ -499,22 +406,22 @@ class CascadedPid
 
   /**
    * @brief Set the parameters of the PID nodes
-   * @param[in] node_params_list: list of PID node parameters, size = n_pid,
+   * @param[in] node_params_list: List of PID node parameters, size = \f$n\f$
    * details see @ref PidNode::setParams
    */
   void setNodeParams(const NodeParamsList& node_params_list);
 
   /**
    * @brief Set the parameters of a specific PID node
-   * @param[in] i: index of the PID node, 0 <= i < n_pid
-   * @param[in] node_params: parameters of the PID node, details see @ref
+   * @param[in] i: Index of the PID node, 0 <= i < \f$n\f$
+   * @param[in] node_params: Parameters of the PID node, details see @ref
    * PidNode::setParams
    */
   void setNodeParamsAt(size_t i, const NodeParams& node_params);
 
   /**
    * @brief Get a specific PID node
-   * @param[in] i: index of the PID node, 0 <= i < n_pid
+   * @param[in] i: Index of the PID node, 0 <= i < \f$n\f$
    * @return PID node
    */
   const PidNode<T>& getNode(size_t i) const { return pid_nodes_[i]; }
@@ -543,19 +450,18 @@ class ParallelPid
   using Data = PidNode<T>::Data;
   using DataList = std::vector<Data>;
 
-  /// reference vector, size = @ref BaseParams::n_pid
+  /// reference vector
   using RefVec = Eigen::VectorX<T>;
-  /// feedback vector, size = @ref BaseParams::n_pid
+  /// feedback vector
   using FdbVec = Eigen::VectorX<T>;
-  /// feedforward vector, size = @ref BaseParams::n_pid
+  /// feedforward vector
   using FfdVec = Eigen::VectorX<T>;
 
   /**
    * @brief Constructor of the parallel PID controller
-   * @param params Parameters of the parallel PID controller
-   * @note The size of the node_params vector should be equal to @ref
-   * BaseParams::n_pid, and node_params[i].dt will be set to @ref
-   * BaseParams::dt.
+   * @param params Parameters of the cascaded PID controller(the size of
+   * `node_params_list` should be equal to `n_pid`, and `node_params_list[*].dt`
+   * will be set to `dt`)
    */
   explicit ParallelPid(const Params& params);
   virtual ~ParallelPid(void) = default;
@@ -581,11 +487,11 @@ class ParallelPid
    * \f${\rm PidNode}\f$ is a function that calculates the output of the PID
    * node, defined in @ref PidNode::calc
    *
-   * @param[in] ref: reference value, \f$vec{x}^d = \left[x_1^d, x_2^d, \dots,
-   * x_n^d\right]^T\f$, size = @ref BaseParams::n_pid
-   * @param[in] fdb_vec: feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
-   * x_{n}\right]^T\f$, size = @ref BaseParams::n_pid
-   * @return output value, \f$u\f$
+   * @param[in] ref: Reference value, \f$\vec{x}^d = \left[x_1^d, x_2^d, \dots,
+   * x_n^d\right]^T\f$, size = \f$n\f$
+   * @param[in] fdb_vec: Feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
+   * x_{n}\right]^T\f$, size = \f$n\f$
+   * @return Output value, \f$u\f$
    */
   T calc(const RefVec& ref_vec, const FdbVec& fdb_vec);
 
@@ -611,13 +517,13 @@ class ParallelPid
    * \f${\rm PidNode}\f$ is a function that calculates the output of the PID
    * node, defined in @ref PidNode::calc
    *
-   * @param[in] ref: reference value, \f$vec{x}^d = \left[x_1^d, x_2^d, \dots,
-   * x_n^d\right]^T\f$, size = @ref BaseParams::n_pid
-   * @param[in] fdb_vec: feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
-   * x_{n}\right]^T\f$, size = @ref BaseParams::n_pid
-   * @param[in] ffd_vec: feedforward vector, \f$\vec{u}^{ff} = \left[u_1^{ff},
-   * u_2^{ff}, \dots, u_n^{ff}\right]^T\f$, size = @ref BaseParams::n_pid
-   * @return output value, \f$u\f$
+   * @param[in] ref: Reference value, \f$\vec{x}^d = \left[x_1^d, x_2^d, \dots,
+   * x_n^d\right]^T\f$, size = \f$n\f$
+   * @param[in] fdb_vec: Feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
+   * x_{n}\right]^T\f$, size = \f$n\f$
+   * @param[in] ffd_vec: Feedforward vector, \f$\vec{u}^{ff} = \left[u_1^{ff},
+   * u_2^{ff}, \dots, u_n^{ff}\right]^T\f$, size = \f$n\f$
+   * @return Output value, \f$u\f$
    */
   T calc(const RefVec& ref_vec, const FdbVec& fdb_vec, const FfdVec& ffd_vec);
 
@@ -630,30 +536,30 @@ class ParallelPid
 
   /**
    * @brief Set the base parameters of the PID controller
-   * @param[in] base_params: base parameters of the PID controller
-   * @note base_params.dt and base_params.n_pid will be ignored.
+   * @param[in] base_params: Base parameters of the PID controller(`dt` and
+   * `n_pid` will be ignored)
    */
   void setBaseParams(const BaseParams& base_params);
   const BaseParams& getBaseParams(void) const { return base_params_; }
 
   /**
    * @brief Set the parameters of the PID nodes
-   * @param[in] node_params_list: list of PID node parameters, size = n_pid,
+   * @param[in] node_params_list: List of PID node parameters, size = \f$n\f$
    * details see @ref PidNode::setParams
    */
   void setNodeParams(const NodeParamsList& node_params_list);
 
   /**
    * @brief Set the parameters of a specific PID node
-   * @param[in] i: index of the PID node, 0 <= i < n_pid
-   * @param[in] node_params: parameters of the PID node, details see @ref
+   * @param[in] i: Index of the PID node, 0 <= i < \f$n\f$
+   * @param[in] node_params: Parameters of the PID node, details see @ref
    * PidNode::setParams
    */
   void setNodeParamsAt(size_t i, const NodeParams& node_params);
 
   /**
    * @brief Get a specific PID node
-   * @param[in] i: index of the PID node, 0 <= i < n_pid
+   * @param[in] i: Index of the PID node, 0 <= i < \f$n\f$
    * @return PID node
    */
   const PidNode<T>& getNode(size_t i) const { return pid_nodes_[i]; }

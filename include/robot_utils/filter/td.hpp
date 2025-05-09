@@ -42,7 +42,7 @@ struct TdParams {
                 "TdParams only supports float and double");
 
   /**
-   * cutoff frequency of tracking-differentiator, \f$r\f$, unit: Hz
+   * @brief cutoff frequency, \f$r\f$, unit: Hz
    *
    * @note Must be smaller than \f$0.5/\Delta t\f$, otherwise it is easy to
    * cause divergence.

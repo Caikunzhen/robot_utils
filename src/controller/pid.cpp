@@ -30,12 +30,12 @@ CascadedPid<T>::CascadedPid(const Params& params) : base_params_(params)
 {
   RU_ASSERT(params.n_pid > 0,
                "The number of pid nodes should be greater than 0");
-  RU_ASSERT(params.n_pid == params.node_params.size(),
-               "The size of node_params should be equal to n_pid");
+  RU_ASSERT(params.n_pid == params.node_params_list.size(),
+               "The size of node_params_list should be equal to n_pid");
 
   pid_nodes_.reserve(params.n_pid);
   for (size_t i = 0; i < params.n_pid; ++i) {
-    NodeParams node_params = params.node_params[i];
+    NodeParams node_params = params.node_params_list[i];
     node_params.dt = params.dt;
     pid_nodes_.emplace_back(node_params);
   }
@@ -106,7 +106,7 @@ ParallelPid<T>::ParallelPid(const Params& params) : base_params_(params)
 
   pid_nodes_.reserve(params.n_pid);
   for (size_t i = 0; i < params.n_pid; ++i) {
-    NodeParams node_params = params.node_params[i];
+    NodeParams node_params = params.node_params_list[i];
     node_params.dt = params.dt;
     pid_nodes_.emplace_back(node_params);
   }

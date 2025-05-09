@@ -16,7 +16,6 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef ROBOT_UTILS_CONTROLLER_OMMPC_HPP_
 #define ROBOT_UTILS_CONTROLLER_OMMPC_HPP_
-#ifdef HAS_QPOASES
 
 /* Includes ------------------------------------------------------------------*/
 #include <yaml-cpp/yaml.h>
@@ -46,9 +45,15 @@ struct OmmpcParams {
   using DiagMatX = Eigen::DiagonalMatrix<real_t, Eigen::Dynamic>;
   /**
    * @brief Dynamic function type, \f$f\left(\mathrm{x}, u\right)\f$
-   * @param[in] x: state vector, \f$\mathrm{x} \in \mathcal{M}\f$, demension
+   *
+   * \f[
+   * \mathrm{x}_{k+1} = \mathrm{x}_k \oplus \left(\Delta t f\left(\mathrm{x}_k,
+   * u_k\right)\right)
+   * \f]
+   *
+   * @param[in] x: State vector, \f$\mathrm{x} \in \mathcal{M}\f$, demension
    * \f$n\f$
-   * @param[in] u: input vector, \f$u \in \mathbb{R}^m\f$
+   * @param[in] u: Input vector, \f$u \in \mathbb{R}^m\f$
    * @return \f$f\left(\mathrm{x}, u\right)\f$
    */
   using DynFunc = std::function<Eigen::VectorX<real_t>(
@@ -65,20 +70,20 @@ struct OmmpcParams {
 
   DynFunc f;
   /**
-   * @brief \f$\frac{\partial f\left(\mathrm{x}, u\boxplus\delta
-   * u\right)}{\partial \delta u} |_{\delta u = 0}\f$
-   * @param[in] x: state vector, \f$\mathrm{x} \in \mathcal{M}\f$, demension
+   * @brief \f$\frac{\partial f\left(\mathrm{x}\boxplus\delta\mathrm{x},
+   * u\right)}{\partial \delta\mathrm{x}} |_{\delta\mathrm{x} = 0}\f$
+   * @param[in] x: State vector, \f$\mathrm{x} \in \mathcal{M}\f$, demension
    * \f$n\f$
-   * @param[in] u: input vector, \f$u \in \mathbb{R}^m\f$
-   * @return Jacobian matrix, \f$\frac{\partial f\left(\mathrm{x},
-   * u\boxplus\delta u\right)}{\partial \delta u} |_{\delta u = 0} \in
+   * @param[in] u: Input vector, \f$u \in \mathbb{R}^m\f$
+   * @return Jacobian matrix, \f$\frac{\partial
+   * f\left(\mathrm{x}\boxplus\delta\mathrm{x}, u\right)}{\partial
+   * \delta\mathrm{x}} |_{\delta\mathrm{x} = 0} \in
    * \mathbb{R}^{n \times n}\f$
    */
   SysSpecificJacobianFunc df_dx;
   /**
    * @brief \f$\frac{\partial f\left(\mathrm{x}, u\boxplus\delta
-   * u\right)}{\partial
-   * \delta u} |_{\delta u = 0}\f$
+   * u\right)}{\partial \delta u} |_{\delta u = 0}\f$
    * @param[in] x: state vector, \f$\mathrm{x} \in \mathcal{M}\f$, demension
    * \f$n\f$
    * @param[in] u: input vector, \f$u \in \mathbb{R}^m\f$
@@ -117,8 +122,6 @@ struct OmmpcParams {
    *
    * @param[in] node: YAML node containing the parameters
    * @param[out] params: OMMPC parameters
-   * @return None
-   * @note None
    */
   static void LoadParamsFromYamlNode(const YAML::Node& node,
                                      OmmpcParams& params);
@@ -143,7 +146,6 @@ struct OmmpcParams {
    *
    * @param[in] node: YAML node containing the parameters
    * @return OMMPC parameters
-   * @note None
    */
   static OmmpcParams LoadParamsFromYamlNode(const YAML::Node& node)
   {
@@ -165,9 +167,7 @@ class Ommpc
   using ConstPtr = std::shared_ptr<const Ommpc>;
 
   using real_t = qpOASES::real_t;
-  /// state vector, \f$\mathrm{x} \in \mathcal{M}\f$, demension \f$n\f$
   using StateVec = CompoundManifold<real_t>;
-  /// input vector, \f$u \in \mathbb{R}^m\f$
   using InputVec = Eigen::VectorX<real_t>;
   using DiagMatX = Eigen::DiagonalMatrix<real_t, Eigen::Dynamic>;
   using CtrlSeq = std::vector<InputVec>;
@@ -184,14 +184,14 @@ class Ommpc
    * solve the problem. The function returns true if the problem is solved
    * successfully, and false otherwise.
    *
-   * @param[in] x_ref_seq: sequence of reference state vector,
+   * @param[in] x_ref_seq: Sequence of reference state vector,
    * \f$\mathrm{x}_{1:N}^d = \left[\mathrm{x}_1^d, \mathrm{x}_2^d, \ldots,
-   * \mathrm{x}_N^d\right]\f$
-   * @param[in] u_ref_seq: sequence of reference input vector, \f$u_{0:N-1}^d =
-   * \left[u_0^d, u_1^d, \ldots, u_{N-1}^d\right]\f$
-   * @param[in] x0: initial state vector, \f$\mathrm{x}_0 \in \mathcal{M}\f$,
+   * \mathrm{x}_N^d\right], \mathrm{x}_i^d \in \mathcal{M}\f$, demension \f$n\f$
+   * @param[in] u_ref_seq: Sequence of reference input vector, \f$u_{0:N-1}^d =
+   * \left[u_0^d, u_1^d, \ldots, u_{N-1}^d\right], u_i^d \in \mathbb{R}^m\f$
+   * @param[in] x0: Initial state vector, \f$\mathrm{x}_0 \in \mathcal{M}\f$,
    * demension \f$n\f$
-   * @param[in] force_init: whether to force re-initialization of the QP solver
+   * @param[in] force_init: Whether to force re-initialization of the QP solver
    * @return true if the problem is solved successfully, false otherwise
    */
   bool solve(const StateSeq& x_ref_seq, const CtrlSeq& u_ref_seq,
@@ -199,8 +199,8 @@ class Ommpc
 
   /**
    * @brief Get the input vector
-   * @param[out] u: input vector, \f$u_f \in \mathbb{R}^m\f$
-   * @param[in] forward_steps: number of forward steps, \f$f\f$, when it is
+   * @param[out] u: Input vector, \f$u_f \in \mathbb{R}^m\f$
+   * @param[in] forward_steps: Number of forward steps, \f$f\f$, when it is
    * greater than horizon - 1, it will be set to horizon - 1
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined.
@@ -209,9 +209,9 @@ class Ommpc
 
   /**
    * @brief Get the input vector
-   * @param[in] forward_steps: number of forward steps, \f$f\f$, when it is
+   * @param[in] forward_steps: Number of forward steps, \f$f\f$, when it is
    * greater than horizon - 1, it will be set to horizon - 1
-   * @return input vector, \f$u_f \in \mathbb{R}^m\f$
+   * @return Input vector, \f$u_f \in \mathbb{R}^m\f$
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined.
    */
@@ -224,8 +224,8 @@ class Ommpc
 
   /**
    * @brief Get the control sequence
-   * @param[out] u_seq: control sequence, \f$u_{0:N-1} =
-   * \left[u_0, u_1, \ldots, u_{N-1}\right]\f$
+   * @param[out] u_seq: Control sequence, \f$u_{0:N-1} =
+   * \left[u_0, u_1, \ldots, u_{N-1}\right], u_i \in \mathbb{R}^m\f$
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined.
    */
@@ -233,8 +233,8 @@ class Ommpc
 
   /**
    * @brief Get the control sequence
-   * @return control sequence, \f$u_{0:N-1} =
-   * \left[u_0, u_1, \ldots, u_{N-1}\right]\f$
+   * @return Control sequence, \f$u_{0:N-1} =
+   * \left[u_0, u_1, \ldots, u_{N-1}\right], u_i \in \mathbb{R}^m\f$
    * @note Call `solve` method first and it must return true, otherwise
    * operation will be undefined.
    */
@@ -247,8 +247,9 @@ class Ommpc
 
   /**
    * @brief Get the state sequence
-   * @param[out] x_seq: state sequence, \f$x_{1:N} =
-   * \left[x_1, x_2, \ldots, x_{N}\right]\f$
+   * @param[out] x_seq: State sequence, \f$x_{1:N} =
+   * \left[x_1, x_2, \ldots, x_{N}\right], x_i \in \mathcal{M}\f$, demension
+   * \f$n\f$
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined
    */
@@ -256,8 +257,9 @@ class Ommpc
 
   /**
    * @brief Get the state sequence
-   * @return state sequence, \f$x_{1:N} =
-   * \left[x_1, x_2, \ldots, x_{N}\right]\f$
+   * @return State sequence, \f$x_{1:N} =
+   * \left[x_1, x_2, \ldots, x_{N}\right], x_i \in \mathcal{M}\f$, demension
+   * \f$n\f$
    * @note Call @ref solve method first and it must return true, otherwise
    * operation will be undefined.
    */
@@ -270,8 +272,8 @@ class Ommpc
 
   /**
    * @brief Set the parameters of the OMMPC controller
-   * @param params OMMPC parameters
-   * @note params.n, params.m, params.horizon and params.dt will be ignored.
+   * @param params: OMMPC parameters(`n`, `m`, `horizon` and `dt` will be
+   * ignored)
    */
   void setParams(const Params& params);
   const Params& getParams(void) const { return params_; }
@@ -299,13 +301,14 @@ class Ommpc
   /// initial state, \f$\delta\mathrm{x}_0 \in \mathbb{R}^n\f$
   Eigen::VectorX<real_t> dx0_;
   /**
-   * referece state sequence, \f$\mathrm{x}_{0:N}^d =
-   * \left[\mathrm{x}_0^d, \mathrm{x}_1^d, \ldots, \mathrm{x}_N^d\right]\f$
+   * @brief referece state sequence, \f$\mathrm{x}_{0:N}^d =
+   * \left[\mathrm{x}_0^d, \mathrm{x}_1^d, \ldots, \mathrm{x}_N^d\right],
+   * \mathrm{x}_i^d \in \mathcal{M}\f$, demension \f$n\f$
    */
   StateSeq x_ref_seq_;
   /**
-   * reference input sequence, \f$u_{0:N-1}^d =
-   * \left[u_0^d, u_1^d, \ldots, u_{N-1}^d\right]\f$
+   * @brief reference input sequence, \f$u_{0:N-1}^d =
+   * \left[u_0^d, u_1^d, \ldots, u_{N-1}^d\right], u_i^d \in \mathbb{R}^m\f$
    */
   CtrlSeq u_ref_seq_;
   /// input transition matrix, \f$\bar S \in \mathbb{R}^{nN \times mN}\f$
@@ -326,7 +329,7 @@ class Ommpc
   /// upper bound vector, \f$\delta\ ^{qp}U_{max} \in \mathbb{R}^{mN}\f$
   Eigen::VectorX<real_t> ub_;
   /**
-   * delta input vector, \f$\delta\ ^{qp}U = \left[\delta u_0^T, \delta
+   * @brief delta input vector, \f$\delta\ ^{qp}U = \left[\delta u_0^T, \delta
    * u_1^T, \ldots, \delta u_{N-1}^T\right]^T \in \mathbb{R}^{mN}\f$
    */
   Eigen::VectorX<real_t> dU_;
@@ -339,5 +342,4 @@ class Ommpc
 
 }  // namespace robot_utils
 
-#endif /* HAS_QPOASES */
 #endif /* ROBOT_UTILS_CONTROLLER_OMMPC_HPP_ */

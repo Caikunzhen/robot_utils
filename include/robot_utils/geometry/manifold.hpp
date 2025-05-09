@@ -54,7 +54,7 @@ enum class ManifoldType {
   /// Special orthogonal group, \f$\mathcal{M} = SO\left(3\right)\f$
   kSpecialOrthogonalGroup3,
   /**
-   * 2-D Surface, \f$\mathcal{M} = \mathcal{S}, \mathcal{S} \doteq
+   * @brief 2-D Surface, \f$\mathcal{M} = \mathcal{S}, \mathcal{S} \doteq
    * \left\{\mathrm{x} \in \mathbb{R}^3 | z = F\left(x, y\right)\right\}\f$
    */
   kSurface2D,
@@ -96,7 +96,7 @@ class ManifoldBase
 
   /**
    * @brief Get the dimension of the manifold
-   * @return The dimension of the manifold
+   * @return The dimension of the manifold, \f$n\f$
    */
   virtual size_t dim(void) const = 0;
 
@@ -104,8 +104,8 @@ class ManifoldBase
 
   /**
    * @brief Check if the manifold is belongs to the same manifold
-   * @param[in] other The other manifold
-   * @return True if the manifold is the same, false otherwise
+   * @param[in] other: The other manifold
+   * @return true if the manifold is the same, false otherwise
    */
   virtual bool isSame(const ManifoldBase<T>& other) const
   {
@@ -113,20 +113,22 @@ class ManifoldBase
   }
 
   /**
-   * @brief Get the local coordinate of \f$\mathrm{y}\f$ at point
+   * @brief Get the local coordinate \f$\varphi\f$ of \f$\mathrm{y}\f$ at point
    * \f$\mathrm{x}\f$
-   * @param[in] y A point in the neighborhood of \f$\mathrm{x}\f$, \f$\mathrm{y}
-   * \in U_\mathrm{x}\f$
-   * @return \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
+   * @param[in] y: A point in the neighborhood of \f$\mathrm{x}\f$,
+   * \f$\mathrm{y} \in U_\mathrm{x}\f$(must belong to the same manifold as this,
+   * details see @ref isSame)
+   * @return \f$\varphi = \varphi_\mathrm{x}\left(\mathrm{y}\right), \varphi \in
+   * \mathbb{R}^n\f$
    */
   virtual HomeSpace proj(const ManifoldBase<T>& y) const = 0;
 
   /**
-   * @brief The inverse of the projection map @ref ManifoldBase::proj
-   * @param[in] phi \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
-   * @param[out] y A point in the neighborhood of \f$\mathrm{x}\f$
-   * @note y must belong to the same manifold as this, details see @ref
-   * ManifoldBase::isSame.
+   * @brief The inverse of the projection map @ref proj
+   * @param[in] phi: The local coordinate, \f$\varphi \in \mathbb{R}^n\f$
+   * @param[out] y: The point in manifold corresponding to \f$\varphi\f$,
+   * \f$\mathrm{y} = \varphi_\mathrm{x}^{-1}\left(\varphi\right)\f$(must belong
+   * to the same manifold as this, details see @ref isSame)
    */
   virtual void invProj(const HomeSpace& phi, ManifoldBase<T>& y) const = 0;
 
@@ -142,11 +144,11 @@ class ManifoldBase
    * homoeomorphic space at a point to yield a new point on the manifold
    * \f$\mathcal{M}\f$.
    *
-   * @param[in] delta The perturbation in the homeomorphic space, \f$\delta\f$
-   * @param[out] y The output point on the manifold, \f$\mathrm{x} \boxplus
-   * \delta\f$
-   * @note y must belong to the same manifold as this, details see @ref
-   * ManifoldBase::isSame.
+   * @param[in] delta: The perturbation in the homeomorphic space, \f$\delta \in
+   * \mathbb{R}^n\f$
+   * @param[out] y: The result point on the manifold, \f$\mathrm{y} = \mathrm{x}
+   * \boxplus \delta\f$(must belong to the same manifold as this, details see
+   * @ref isSame)
    */
   void add(const HomeSpace& delta, ManifoldBase<T>& y) const
   {
@@ -164,11 +166,10 @@ class ManifoldBase
    * \f$\boxminus\f$ represents the difference between two points on the
    * manifold in the homoeomorphic space.
    *
-   * @param[in] x The point on the manifold, \f$\mathrm{x}\f$
+   * @param[in] x: The point on the manifold, \f$\mathrm{x}\f$(must belong to
+   * the same manifold as this, details see @ref isSame)
    * @return The difference in the homeomorphic space, \f$\mathrm{y} \boxminus
-   * \mathrm{x}\f$
-   * @note x must belong to the same manifold as this, details see @ref
-   * ManifoldBase::isSame.
+   * \mathrm{x} \in \mathbb{R}^n\f$
    */
   HomeSpace operator-(const ManifoldBase<T>& x) const { return x.proj(*this); }
 
@@ -195,7 +196,7 @@ class EuclideanSpaceX : public ManifoldBase<T>
 
   /**
    * @brief Constructor of the Euclidean space
-   * @param[in] dim The dimension of the Euclidean space, \f$n\f$
+   * @param[in] dim: The dimension of the Euclidean space, \f$n\f$
    */
   explicit EuclideanSpaceX(size_t dim)
       : ManifoldBase<T>(ManifoldType::kEuclideanSpaceX), dim_(dim)
@@ -207,7 +208,7 @@ class EuclideanSpaceX : public ManifoldBase<T>
   }
   /**
    * @brief Constructor of the Euclidean space
-   * @param[in] m The point in the Euclidean space, \f$\mathrm{m} \in
+   * @param[in] m: The point in the Euclidean space, \f$\mathrm{m} \in
    * \mathbb{R}^n\f$
    */
   explicit EuclideanSpaceX(const Data& m)
@@ -224,11 +225,13 @@ class EuclideanSpaceX : public ManifoldBase<T>
   virtual size_t dim(void) const override { return dim_; }
 
   /**
-   * @brief Get the local coordinate of \f$\mathrm{x}\f$ at point
+   * @brief Get the local coordinate \f$\varphi\f$ of \f$\mathrm{y}\f$ at point
    * \f$\mathrm{x}\f$
-   * @param[in] y A point in the neighborhood of \f$\mathrm{x}\f$, \f$\mathrm{y}
-   * \in U_\mathrm{x}\f$
-   * @return \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
+   * @param[in] y: A point in the neighborhood of \f$\mathrm{x}\f$,
+   * \f$\mathrm{y} \in U_\mathrm{x}\f$(must belong to the same manifold as this,
+   * details see @ref isSame)
+   * @return \f$\varphi = \varphi_\mathrm{x}\left(\mathrm{y}\right), \varphi \in
+   * \mathbb{R}^n\f$
    */
   virtual HomeSpace proj(const ManifoldBase<T>& y) const override
   {
@@ -240,11 +243,11 @@ class EuclideanSpaceX : public ManifoldBase<T>
   }
 
   /**
-   * @brief The inverse of the projection map @ref ManifoldBase::proj
-   * @param[in] phi \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
-   * @param[out] y A point in the neighborhood of \f$\mathrm{x}\f$
-   * @note y must belong to the same manifold as this, details see @ref
-   * ManifoldBase::isSame.
+   * @brief The inverse of the projection map @ref proj
+   * @param[in] phi: The local coordinate, \f$\varphi \in \mathbb{R}^n\f$
+   * @param[out] y: The point in manifold corresponding to \f$\varphi\f$,
+   * \f$\mathrm{y} = \varphi_\mathrm{x}^{-1}\left(\varphi\right)\f$(must belong
+   * to the same manifold as this, details see @ref isSame)
    */
   virtual void invProj(const HomeSpace& phi, ManifoldBase<T>& y) const override
   {
@@ -260,9 +263,10 @@ class EuclideanSpaceX : public ManifoldBase<T>
    *
    * Details see @ref ManifoldBase::add.
    *
-   * @param[in] delta The perturbation in the homeomorphic space, \f$\delta\f$
-   * @return The output point on the manifold, \f$\mathrm{x} \boxplus
-   * \delta\f$
+   * @param[in] delta: The perturbation in the homeomorphic space, \f$\delta \in
+   * \mathbb{R}^n\f$
+   * @return The result point on the manifold, \f$\mathrm{y} = \mathrm{x}
+   * \boxplus \delta\f$
    */
   EuclideanSpaceX operator+(const HomeSpace& delta) const
   {
@@ -278,9 +282,9 @@ class EuclideanSpaceX : public ManifoldBase<T>
    *
    * Details see @ref ManifoldBase::operator-.
    *
-   * @param[in] x The point on the manifold, \f$\mathrm{x}\f$
+   * @param[in] x: The point on the manifold, \f$\mathrm{x} \in \mathbb{R}^n\f$
    * @return The difference in the homeomorphic space, \f$\mathrm{y} \boxminus
-   * \mathrm{x}\f$
+   * \mathrm{x} \in \mathbb{R}^n\f$
    */
   HomeSpace operator-(const EuclideanSpaceX& x) const
   {
@@ -296,7 +300,8 @@ class EuclideanSpaceX : public ManifoldBase<T>
 
   /**
    * @brief Get the identity of the Euclidean space
-   * @return The identity of the Euclidean space, \f$\mathrm{x} = \mathbf{0}\f$
+   * @return The identity of the Euclidean space, \f$\mathrm{x} =
+   * \mathbf{0}_n\f$
    */
   EuclideanSpaceX<T> getIdentity(void) const
   {
@@ -338,7 +343,7 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
   }
   /**
    * @brief Constructor of the special orthogonal group
-   * @param[in] m The point in the special orthogonal group, \f$\mathrm{m} \in
+   * @param[in] m: The point in the special orthogonal group, \f$\mathrm{m} \in
    * SO\left(2\right)\f$
    */
   explicit SpecialOrthogonalGroup2(const Data& m)
@@ -355,11 +360,13 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
   virtual size_t dim(void) const override { return 1; }
 
   /**
-   * @brief Get the local coordinate of \f$\mathrm{x}\f$ at point
+   * @brief Get the local coordinate \f$\varphi\f$ of \f$\mathrm{y}\f$ at point
    * \f$\mathrm{x}\f$
-   * @param[in] y A point in the neighborhood of \f$\mathrm{x}\f$, \f$\mathrm{y}
-   * \in U_\mathrm{x}\f$
-   * @return \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
+   * @param[in] y: A point in the neighborhood of \f$\mathrm{x}\f$,
+   * \f$\mathrm{y} \in U_\mathrm{x}\f$(must belong to the same manifold as this,
+   * details see @ref isSame)
+   * @return \f$\varphi = \varphi_\mathrm{x}\left(\mathrm{y}\right), \varphi \in
+   * \mathbb{R}^n\f$
    */
   virtual HomeSpace proj(const ManifoldBase<T>& y) const override
   {
@@ -375,11 +382,11 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
   }
 
   /**
-   * @brief The inverse of the projection map @ref ManifoldBase::proj
-   * @param[in] phi \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
-   * @param[out] y A point in the neighborhood of \f$\mathrm{x}\f$
-   * @note y must belong to the same manifold as this, details see @ref
-   * ManifoldBase::isSame.
+   * @brief The inverse of the projection map @ref proj
+   * @param[in] phi: The local coordinate, \f$\varphi \in \mathbb{R}^n\f$
+   * @param[out] y: The point in manifold corresponding to \f$\varphi\f$,
+   * \f$\mathrm{y} = \varphi_\mathrm{x}^{-1}\left(\varphi\right)\f$(must belong
+   * to the same manifold as this, details see @ref isSame)
    */
   virtual void invProj(const HomeSpace& phi, ManifoldBase<T>& y) const override
   {
@@ -397,9 +404,10 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
    *
    * Details see @ref ManifoldBase::add.
    *
-   * @param[in] delta The perturbation in the homeomorphic space, \f$\delta\f$
-   * @return The output point on the manifold, \f$\mathrm{x} \boxplus
-   * \delta\f$
+   * @param[in] delta: The perturbation in the homeomorphic space, \f$\delta \in
+   * \mathbb{R}^n\f$
+   * @return The result point on the manifold, \f$\mathrm{y} = \mathrm{x}
+   * \boxplus \delta\f$
    */
   SpecialOrthogonalGroup2 operator+(const HomeSpace& delta) const
   {
@@ -418,9 +426,9 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
    *
    * Details see @ref ManifoldBase::operator-.
    *
-   * @param[in] x The point on the manifold, \f$\mathrm{x}\f$
+   * @param[in] x: The point on the manifold, \f$\mathrm{x} \in \mathbb{R}^n\f$
    * @return The difference in the homeomorphic space, \f$\mathrm{y} \boxminus
-   * \mathrm{x}\f$
+   * \mathrm{x} \in \mathbb{R}^n\f$
    */
   HomeSpace operator-(const SpecialOrthogonalGroup2& x) const
   {
@@ -441,7 +449,7 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
   /**
    * @brief Get the identity of the special orthogonal group
    * @return The identity of the special orthogonal group, \f$\mathrm{x} =
-   * \mathbf{I}\f$
+   * \mathbf{I}_2\f$
    */
   SpecialOrthogonalGroup2<T> getIdentity(void) const
   {
@@ -499,11 +507,13 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
   virtual size_t dim(void) const override { return 3; }
 
   /**
-   * @brief Get the local coordinate of \f$\mathrm{x}\f$ at point
+   * @brief Get the local coordinate \f$\varphi\f$ of \f$\mathrm{y}\f$ at point
    * \f$\mathrm{x}\f$
-   * @param[in] y A point in the neighborhood of \f$\mathrm{x}\f$, \f$\mathrm{y}
-   * \in U_\mathrm{x}\f$
-   * @return \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
+   * @param[in] y: A point in the neighborhood of \f$\mathrm{x}\f$,
+   * \f$\mathrm{y} \in U_\mathrm{x}\f$(must belong to the same manifold as this,
+   * details see @ref isSame)
+   * @return \f$\varphi = \varphi_\mathrm{x}\left(\mathrm{y}\right), \varphi \in
+   * \mathbb{R}^n\f$
    */
   virtual HomeSpace proj(const ManifoldBase<T>& y) const override
   {
@@ -518,11 +528,11 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
   }
 
   /**
-   * @brief The inverse of the projection map @ref ManifoldBase::proj
-   * @param[in] phi \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
-   * @param[out] y A point in the neighborhood of \f$\mathrm{x}\f$
-   * @note y must belong to the same manifold as this, details see @ref
-   * ManifoldBase::isSame.
+   * @brief The inverse of the projection map @ref proj
+   * @param[in] phi: The local coordinate, \f$\varphi \in \mathbb{R}^n\f$
+   * @param[out] y: The point in manifold corresponding to \f$\varphi\f$,
+   * \f$\mathrm{y} = \varphi_\mathrm{x}^{-1}\left(\varphi\right)\f$(must belong
+   * to the same manifold as this, details see @ref isSame)
    */
   virtual void invProj(const HomeSpace& phi, ManifoldBase<T>& y) const override
   {
@@ -541,9 +551,10 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
    *
    * Details see @ref ManifoldBase::add.
    *
-   * @param[in] delta The perturbation in the homeomorphic space, \f$\delta\f$
-   * @return The output point on the manifold, \f$\mathrm{x} \boxplus
-   * \delta\f$
+   * @param[in] delta: The perturbation in the homeomorphic space, \f$\delta \in
+   * \mathbb{R}^n\f$
+   * @return The result point on the manifold, \f$\mathrm{y} = \mathrm{x}
+   * \boxplus \delta\f$
    */
   SpecialOrthogonalGroup3 operator+(const HomeSpace& delta) const
   {
@@ -563,9 +574,9 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
    *
    * Details see @ref ManifoldBase::operator-.
    *
-   * @param[in] x The point on the manifold, \f$\mathrm{x}\f$
+   * @param[in] x: The point on the manifold, \f$\mathrm{x} \in \mathbb{R}^n\f$
    * @return The difference in the homeomorphic space, \f$\mathrm{y} \boxminus
-   * \mathrm{x}\f$
+   * \mathrm{x} \in \mathbb{R}^n\f$
    */
   HomeSpace operator-(const SpecialOrthogonalGroup3& x) const
   {
@@ -585,7 +596,7 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
   /**
    * @brief Get the identity of the special orthogonal group
    * @return The identity of the special orthogonal group, \f$\mathrm{x} =
-   * \mathbf{I}\f$
+   * \mathbf{I}_3\f$
    */
   SpecialOrthogonalGroup3<T> getIdentity(void) const
   {
@@ -612,10 +623,10 @@ class Surface2D : public ManifoldBase<T>
   using Scalar = T;
   using Data = Eigen::Vector3<T>;
   /**
-   * @brief Function type for the surface function \f$f(x, y) = z\f$
-   * @param[in] x The x coordinate, \f$x\f$
-   * @param[in] y The y coordinate, \f$y\f$
-   * @return The z coordinate, \f$z\f$
+   * @brief Function type for the surface function \f$z = f(x, y)\f$
+   * @param[in] x: The x coordinate, \f$x\f$
+   * @param[in] y: The y coordinate, \f$y\f$
+   * @return The z coordinate, \f$z = f(x, y)\f$
    */
   using SurfFunc = std::function<T(T, T)>;
   using HomeSpace = Eigen::VectorX<T>;
@@ -628,7 +639,7 @@ class Surface2D : public ManifoldBase<T>
    * This constructor initializes the 2-D surface to the identity point
    * \f$(0, 0, f(0, 0))\f$.
    *
-   * @param[in] f The surface function \f$f(x, y) = z\f$
+   * @param[in] f The surface function \f$z = f(x, y)\f$
    */
   explicit Surface2D(const SurfFunc& f)
       : ManifoldBase<T>(ManifoldType::kSurface2D), f_(f)
@@ -638,10 +649,10 @@ class Surface2D : public ManifoldBase<T>
   }
   /**
    * @brief Constructor of the 2-D surface
-   * @param[in] f The surface function \f$f(x, y) = z\f$
+   * @param[in] f The surface function \f$z = f(x, y)\f$
    * @param[in] m The point in the 2-D surface, \f$\mathrm{m} \in \mathcal{S}\f$
-   * @note The z coordinate of \f$\mathrm{m}\f$ will be updated to
-   * \f$f(m(0), m(1))\f$.
+   * (the z coordinate of \f$\mathrm{m}\f$ will be updated to
+   * \f$f(m(0), m(1))\f$)
    */
   Surface2D(const SurfFunc& f, const Data& m)
       : ManifoldBase<T>(ManifoldType::kSurface2D), f_(f), m_(m)
@@ -657,11 +668,13 @@ class Surface2D : public ManifoldBase<T>
   virtual size_t dim(void) const override { return 2; }
 
   /**
-   * @brief Get the local coordinate of \f$\mathrm{x}\f$ at point
+   * @brief Get the local coordinate \f$\varphi\f$ of \f$\mathrm{y}\f$ at point
    * \f$\mathrm{x}\f$
-   * @param[in] y A point in the neighborhood of \f$\mathrm{x}\f$, \f$\mathrm{y}
-   * \in U_\mathrm{x}\f$
-   * @return \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
+   * @param[in] y: A point in the neighborhood of \f$\mathrm{x}\f$,
+   * \f$\mathrm{y} \in U_\mathrm{x}\f$(must belong to the same manifold as this,
+   * details see @ref isSame)
+   * @return \f$\varphi = \varphi_\mathrm{x}\left(\mathrm{y}\right), \varphi \in
+   * \mathbb{R}^n\f$
    */
   virtual HomeSpace proj(const ManifoldBase<T>& y) const override
   {
@@ -673,11 +686,11 @@ class Surface2D : public ManifoldBase<T>
   }
 
   /**
-   * @brief The inverse of the projection map @ref ManifoldBase::proj
-   * @param[in] phi \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
-   * @param[out] y A point in the neighborhood of \f$\mathrm{x}\f$
-   * @note y must belong to the same manifold as this, details see @ref
-   * ManifoldBase::isSame.
+   * @brief The inverse of the projection map @ref proj
+   * @param[in] phi: The local coordinate, \f$\varphi \in \mathbb{R}^n\f$
+   * @param[out] y: The point in manifold corresponding to \f$\varphi\f$,
+   * \f$\mathrm{y} = \varphi_\mathrm{x}^{-1}\left(\varphi\right)\f$(must belong
+   * to the same manifold as this, details see @ref isSame)
    */
   virtual void invProj(const HomeSpace& phi, ManifoldBase<T>& y) const override
   {
@@ -694,9 +707,10 @@ class Surface2D : public ManifoldBase<T>
    *
    * Details see @ref ManifoldBase::add.
    *
-   * @param[in] delta The perturbation in the homeomorphic space, \f$\delta\f$
-   * @return The output point on the manifold, \f$\mathrm{x} \boxplus
-   * \delta\f$
+   * @param[in] delta: The perturbation in the homeomorphic space, \f$\delta \in
+   * \mathbb{R}^n\f$
+   * @return The result point on the manifold, \f$\mathrm{y} = \mathrm{x}
+   * \boxplus \delta\f$
    */
   Surface2D operator+(const HomeSpace& delta) const
   {
@@ -714,9 +728,9 @@ class Surface2D : public ManifoldBase<T>
    *
    * Details see @ref ManifoldBase::operator-.
    *
-   * @param[in] x The point on the manifold, \f$\mathrm{x}\f$
+   * @param[in] x: The point on the manifold, \f$\mathrm{x} \in \mathbb{R}^n\f$
    * @return The difference in the homeomorphic space, \f$\mathrm{y} \boxminus
-   * \mathrm{x}\f$
+   * \mathrm{x} \in \mathbb{R}^n\f$
    */
   HomeSpace operator-(const Surface2D& x) const { return (m_ - x.m_).head(2); }
 
@@ -757,7 +771,7 @@ class CompoundManifold : public ManifoldBase<T>
 
   /**
    * @brief Constructor of the compound manifold
-   * @param[in] m The primitive manifolds of the compound manifold
+   * @param[in] m: The point in the compound manifold
    */
   explicit CompoundManifold(const Data& m)
       : ManifoldBase<T>(ManifoldType::kCompoundManifold), m_(m)
@@ -770,7 +784,7 @@ class CompoundManifold : public ManifoldBase<T>
   }
   /**
    * @brief Constructor of the compound manifold
-   * @param[in] other The other compound manifold
+   * @param[in] other: The other compound manifold
    */
   CompoundManifold(const CompoundManifold<T>& other)
       : ManifoldBase<T>(ManifoldType::kCompoundManifold), dim_(other.dim_)
@@ -805,7 +819,7 @@ class CompoundManifold : public ManifoldBase<T>
   }
   /**
    * @brief Move constructor of the compound manifold
-   * @param[in] other The other compound manifold
+   * @param[in] other: The other compound manifold
    */
   CompoundManifold(const CompoundManifold<T>&& other)
       : ManifoldBase<T>(ManifoldType::kCompoundManifold),
@@ -815,9 +829,9 @@ class CompoundManifold : public ManifoldBase<T>
   }
   /**
    * @brief Assignment operator of the compound manifold
-   * @param[in] other The other compound manifold
+   * @param[in] other: The other compound manifold
    * @note When other belongs to the same type as this, is better to use
-   * @ref CompoundManifold::copyData instead of this operator.
+   * @ref copyData instead of this operator.
    */
   CompoundManifold<T>& operator=(const CompoundManifold<T>& other)
   {
@@ -859,7 +873,7 @@ class CompoundManifold : public ManifoldBase<T>
   }
   /**
    * @brief Move assignment operator of the compound manifold
-   * @param[in] other The other compound manifold
+   * @param[in] other: The other compound manifold
    */
   CompoundManifold<T>& operator=(CompoundManifold<T>&& other)
   {
@@ -876,16 +890,44 @@ class CompoundManifold : public ManifoldBase<T>
 
   /**
    * @brief Get the dimension of the compound manifold
-   * @return The dimension of the compound manifold
+   * @return The dimension of the compound manifold, \f$n\f$
    */
   virtual size_t dim(void) const override { return dim_; }
 
   /**
-   * @brief Get the local coordinate of \f$\mathrm{x}\f$ at point
+   * @brief Check if the manifold is belongs to the same manifold
+   * @param[in] other: The other manifold
+   * @return true if the manifold is the same, false otherwise
+   */
+  virtual bool isSame(const ManifoldBase<T>& other) const override
+  {
+    if (other.type() != ManifoldType::kCompoundManifold) {
+      return false;
+    }
+
+    const CompoundManifold<T>& other_t = (const CompoundManifold<T>&)other;
+
+    if (m_.size() != other_t.m_.size()) {
+      return false;
+    }
+
+    for (size_t i = 0; i < m_.size(); ++i) {
+      if (!m_[i]->isSame(*(other_t.m_[i]))) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * @brief Get the local coordinate \f$\varphi\f$ of \f$\mathrm{y}\f$ at point
    * \f$\mathrm{x}\f$
-   * @param[in] y A point in the neighborhood of \f$\mathrm{x}\f$, \f$\mathrm{y}
-   * \in U_\mathrm{x}\f$
-   * @return \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
+   * @param[in] y: A point in the neighborhood of \f$\mathrm{x}\f$,
+   * \f$\mathrm{y} \in U_\mathrm{x}\f$(must belong to the same manifold as this,
+   * details see @ref isSame)
+   * @return \f$\varphi = \varphi_\mathrm{x}\left(\mathrm{y}\right), \varphi \in
+   * \mathbb{R}^n\f$
    */
   virtual HomeSpace proj(const ManifoldBase<T>& y) const override
   {
@@ -907,11 +949,11 @@ class CompoundManifold : public ManifoldBase<T>
   }
 
   /**
-   * @brief The inverse of the projection map @ref ManifoldBase::proj
-   * @param[in] phi \f$\varphi_\mathrm{x}\left(\mathrm{y}\right)\f$
-   * @param[out] y A point in the neighborhood of \f$\mathrm{x}\f$
-   * @note y must belong to the same manifold as this, details see @ref
-   * ManifoldBase::isSame.
+   * @brief The inverse of the projection map @ref proj
+   * @param[in] phi: The local coordinate, \f$\varphi \in \mathbb{R}^n\f$
+   * @param[out] y: The point in manifold corresponding to \f$\varphi\f$,
+   * \f$\mathrm{y} = \varphi_\mathrm{x}^{-1}\left(\varphi\right)\f$(must belong
+   * to the same manifold as this, details see @ref isSame)
    */
   virtual void invProj(const HomeSpace& phi, ManifoldBase<T>& y) const override
   {
@@ -935,9 +977,10 @@ class CompoundManifold : public ManifoldBase<T>
    *
    * Details see @ref ManifoldBase::add.
    *
-   * @param[in] delta The perturbation in the homeomorphic space, \f$\delta\f$
-   * @return The output point on the manifold, \f$\mathrm{x} \boxplus
-   * \delta\f$
+   * @param[in] delta: The perturbation in the homeomorphic space, \f$\delta \in
+   * \mathbb{R}^n\f$
+   * @return The result point on the manifold, \f$\mathrm{y} = \mathrm{x}
+   * \boxplus \delta\f$
    */
   CompoundManifold operator+(const HomeSpace& delta) const
   {
@@ -981,9 +1024,9 @@ class CompoundManifold : public ManifoldBase<T>
    *
    * Details see @ref ManifoldBase::operator-.
    *
-   * @param[in] x The point on the manifold, \f$\mathrm{x}\f$
+   * @param[in] x: The point on the manifold, \f$\mathrm{x} \in \mathbb{R}^n\f$
    * @return The difference in the homeomorphic space, \f$\mathrm{y} \boxminus
-   * \mathrm{x}\f$
+   * \mathrm{x} \in \mathbb{R}^n\f$
    */
   HomeSpace operator-(const CompoundManifold& x) const
   {
@@ -1041,9 +1084,8 @@ class CompoundManifold : public ManifoldBase<T>
 
   /**
    * @brief Copy data from another compound manifold
-   * @param[in] other The other compound manifold
-   * @note The other compound manifold must have the same dimension and
-   * primitive manifolds as this.
+   * @param[in] other: The other compound manifold(must belong to the same
+   * manifold as this, details see @ref isSame)
    */
   void copyData(const CompoundManifold<T>& other)
   {
