@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
- * @file      : pid_node.hpp
- * @brief     :
- * @history   :
- *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
- *******************************************************************************
- * @attention :
+ * @file pid_node.hpp
+ * @brief Basic PID controller
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-05-08
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the pid_node.hpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
@@ -59,8 +62,8 @@ struct PidNodeParams {
   /// upper bound of integral separate, \f$\epsilon_{max}^{i}\f$
   T int_separate_ub = 0;
   /**
-   * weight of pervious difference, \f$w_{prev}^{d}\f$, 0 means no previous
-   * difference, 1 means only previous difference
+   * @brief weight of pervious difference, \f$w_{prev}^{d}\f$, 0 means no
+   * previous difference, 1 means only previous difference
    */
   T perv_diff_weight = 0;
   /// cutoff frequency of tracking-differentiator, \f$r\f$, unit: Hz
@@ -111,7 +114,8 @@ struct PidNodeParams {
    * @param[in] node: YAML node containing the parameters
    * @param[out] params: PidNodeParams object to store the loaded parameters
    */
-  static void LoadParamsFromYamlNode(YAML::Node& node, PidNodeParams& params)
+  static void LoadParamsFromYamlNode(const YAML::Node& node,
+                                     PidNodeParams& params)
   {
     params.kp = node["kp"].as<T>();
     params.ki = node["ki"].as<T>();
@@ -173,7 +177,7 @@ struct PidNodeParams {
    *
    * @param[in] node: YAML node containing the parameters
    */
-  static PidNodeParams LoadParamsFromYamlNode(YAML::Node& node)
+  static PidNodeParams LoadParamsFromYamlNode(const YAML::Node& node)
   {
     PidNodeParams params;
     LoadParamsFromYamlNode(node, params);
@@ -185,10 +189,10 @@ struct PidNodeParams {
  * @brief Basic PID controller class
  *
  * This class implements a basic PID controller, it is used to combine with each
- * other to form a complex PID controller. So it is not recommended to use it
- * alone.
+ * other to form a complex PID controller.
  *
  * @tparam T Type of the data (only provides float and double)
+ * @note It is not recommended to use this class alone.
  */
 template <typename T>
 class PidNode
@@ -240,8 +244,9 @@ class PidNode
    * \f[
    * e_i =
    * \begin{cases}
-   * \hat e_i, & {\rm en\_deadband} = false \\
-   * {\rm Clamp}\left(\hat e_i, \epsilon_{min}, \epsilon_{max}\right), &
+   * 0, & {\rm en\_deadband} = true \text{ and } \hat e_i \in
+   * \left[\epsilon_{min}, \epsilon_{max}\right] \\
+   * \hat e_i, &
    * \text{else}
    * \end{cases}
    * \f]
@@ -296,8 +301,8 @@ class PidNode
    * \f]
    *
    * \f[
-   * u_i^d = K_d \cdot \left(w_{prev}^d \cdot x_i' + \left(1 - w_{prev}^d\right)
-   * \cdot \hat e_i'\right)
+   * u_i^d = K_d \cdot \left(-w_{prev}^d \cdot x_i' + \left(1 -
+   * w_{prev}^d\right) * \cdot \hat e_i'\right)
    * \f]
    *
    * Calculate the output
@@ -309,6 +314,15 @@ class PidNode
    * u_i^p + u_i^i + u_i^d + u_i^{ff}, & \text{else}
    * \end{cases}
    * \f]
+   *
+   * \f$ {\rm PeriodicDataSub}\f$ is a function that calculates the periodic
+   * subtraction of the data, defined in @ref PeriodicDataSub.
+   *
+   * \f$ {\rm Clamp}\f$ is a function that clamps the data to the given range,
+   * same as std::clamp.
+   *
+   * \f${\rm Td}\f$ is a function that calculates the output of the tracking
+   * differentiator, detailed see @ref Td.
    *
    * @param[in] ref: Reference value, \f$x_i^d\f$
    * @param[in] fdb: Feedback value, \f$x_i\f$
@@ -329,8 +343,8 @@ class PidNode
 
   /**
    * @brief Set the parameters of the PID controller
-   * @param params Parameters of the PID controller
-   * @note params.dt and params.period will be ignored.
+   * @param params: Parameters of the PID controller(`dt` and `period` will be
+   * ignored)
    */
   void setParams(const Params& params);
   const Params& getParams(void) const { return params_; }

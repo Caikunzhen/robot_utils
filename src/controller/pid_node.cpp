@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
- * @file      : pid_node.cpp
- * @brief     :
- * @history   :
- *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
- *******************************************************************************
- * @attention :
+ * @file pid_node.cpp
+ * @brief Basic PID controller
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-05-08
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the pid_node.hpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
@@ -18,6 +21,7 @@
 #include <algorithm>
 
 #include "robot_utils/core/assert.hpp"
+#include "robot_utils/core/math_tools.hpp"
 #include "robot_utils/core/periodic_data.hpp"
 /* Private macro -------------------------------------------------------------*/
 
@@ -62,7 +66,7 @@ T PidNode<T>::calc(const T& ref, const T& fdb, const T& ffd)
   }
 
   if (params_.en_deadband) {
-    data_.err = std::clamp(err, params_.deadband_lb, params_.deadband_ub);
+    data_.err = Deadband(params_.deadband_lb, params_.deadband_ub, err);
   } else {
     data_.err = err;
   }
@@ -88,20 +92,26 @@ T PidNode<T>::calc(const T& ref, const T& fdb, const T& ffd)
   if (params_.en_td) {
     derr = err_td_ptr_->calc(data_.err);
     dfdb = fdb_td_ptr_->calc(data_.fdb);
-  } else {
+  } else if (!data_.is_first_calc) {
     derr = (data_.err - data_.prev_err) / dt;
-    dfdb = (data_.fdb - data_.prev_fdb) / dt;
+    if (params_.period > 0) {
+      dfdb = PeriodicDataSub(params_.period, data_.fdb, data_.prev_fdb) / dt;
+    } else {
+      dfdb = (data_.fdb - data_.prev_fdb) / dt;
+    }
   }
-  data_.dout = params_.kd * (params_.perv_diff_weight * dfdb +
+  data_.dout = params_.kd * (-params_.perv_diff_weight * dfdb +
                              (1 - params_.perv_diff_weight) * derr);
 
   // Calculate the output
+  T out = data_.pout + data_.iout + data_.dout + ffd;
   if (params_.en_out_limit) {
-    T out = data_.pout + data_.iout + data_.dout + ffd;
     data_.out = std::clamp(out, params_.out_limit_lb, params_.out_limit_ub);
   } else {
-    data_.out = data_.pout + data_.iout + data_.dout + ffd;
+    data_.out = out;
   }
+
+  data_.is_first_calc = false;
 
   return data_.out;
 }
@@ -113,18 +123,18 @@ void PidNode<T>::setParams(const Params& params)
   RU_ASSERT(params.ki >= 0, "ki must be greater than or equal to 0");
   RU_ASSERT(params.kd >= 0, "kd must be greater than or equal to 0");
   RU_ASSERT(
-      params_.en_out_limit && params_.out_limit_lb < params_.out_limit_ub,
+      !params_.en_out_limit || params_.out_limit_lb < params_.out_limit_ub,
       "out_limit_lb must be less than out_limit_ub");
-  RU_ASSERT(params_.en_deadband && params_.deadband_lb < params_.deadband_ub,
-               "deadband_lb must be less than deadband_ub");
-  RU_ASSERT(
-      params_.en_anti_windup && params_.anti_windup_lb < params_.anti_windup_ub,
-      "anti_windup_lb must be less than anti_windup_ub");
-  RU_ASSERT(params_.en_int_separate &&
-                   params_.int_separate_lb < params_.int_separate_ub,
-               "int_separate_lb must be less than int_separate_ub");
+  RU_ASSERT(!params_.en_deadband || params_.deadband_lb < params_.deadband_ub,
+            "deadband_lb must be less than deadband_ub");
+  RU_ASSERT(!params_.en_anti_windup ||
+                params_.anti_windup_lb < params_.anti_windup_ub,
+            "anti_windup_lb must be less than anti_windup_ub");
+  RU_ASSERT(!params_.en_int_separate ||
+                params_.int_separate_lb < params_.int_separate_ub,
+            "int_separate_lb must be less than int_separate_ub");
   RU_ASSERT(params_.perv_diff_weight >= 0 && params_.perv_diff_weight <= 1,
-               "perv_diff_weight must be between 0 and 1");
+            "perv_diff_weight must be between 0 and 1");
 
   T dt = params_.dt;
   T period = params_.period;
