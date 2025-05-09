@@ -58,10 +58,9 @@ inline double Rad2Deg(double rad) { return rad * kRad2DegCoff; }
  * For floating-point types, it uses the std::fmod function.
  *
  * @tparam T Arithmetic type (integer or floating point)
- * @param[in] val The value to be modded
- * @param[in] mod The modulus
- * @return The result of the modulus operation
- * @note When mod = 0, the function returns the original value.
+ * @param[in] val: The value to be modded
+ * @param[in] mod: The modulus
+ * @return The result of the modulus operation(when mod = 0, return val)
  */
 template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
 inline T GenericMod(const T& val, const T& mod)
@@ -83,7 +82,7 @@ inline T GenericMod(const T& val, const T& mod)
  * This function returns the sign of a value.
  *
  * @tparam T Type of the value
- * @param[in] val The value to check
+ * @param[in] val: The value to check
  * @return 1 if val > 0, -1 if val < 0, and 0 if val == 0
  */
 template <typename T>
@@ -101,15 +100,47 @@ inline T GetSign(const T& val)
 /**
  * @brief Check if a value is in a specified range
  * @tparam T Type of the value
- * @param[in] min_val Minimum value of the range
- * @param[in] max_val Maximum value of the range
- * @param[in] val Value to check
+ * @param[in] min_val: Minimum value of the range
+ * @param[in] max_val: Maximum value of the range
+ * @param[in] val: Value to check
  * @return true if val is in the range [min_val, max_val], false otherwise
  */
 template <typename T>
 inline bool IsInRange(const T& min_val, const T& max_val, const T& val)
 {
   return val >= min_val && val <= max_val;
+}
+
+/**
+ * @brief Deadband function
+ * @tparam T Type of the value
+ * @param[in] lb: Lower bound of the deadband
+ * @param[in] ub: Upper bound of the deadband
+ * @param[in] val: Value to check
+ * @return 0 if val is in the deadband [lb, ub], otherwise return val
+ */
+template <typename T>
+inline T Deadband(const T& lb, const T& ub, const T& val)
+{
+  if (lb <= val && val <= ub) {
+    return 0;
+  } else {
+    return val;
+  }
+}
+
+/**
+ * @brief Deadband function
+ * @tparam T Type of the value
+ * @param[in] lb: Lower bound of the deadband
+ * @param[in] ub: Upper bound of the deadband
+ * @param[in|out] val: Value to check and modify, it will be set to 0 if it is
+ * in the deadband [lb, ub]
+ */
+template <typename T>
+inline void Deadband(const T& lb, const T& ub, T* val)
+{
+  *val = Deadband(lb, ub, *val);
 }
 }  // namespace robot_utils
 
