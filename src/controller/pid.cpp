@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
- * @file      : pid.cpp
- * @brief     :
- * @history   :
- *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
- *******************************************************************************
- * @attention :
+ * @file pid.cpp
+ * @brief Cascaded PID and parallel PID controller
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-05-09
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the pid.cpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
@@ -29,9 +32,9 @@ template <typename T>
 CascadedPid<T>::CascadedPid(const Params& params) : base_params_(params)
 {
   RU_ASSERT(params.n_pid > 0,
-               "The number of pid nodes should be greater than 0");
+            "The number of pid nodes should be greater than 0");
   RU_ASSERT(params.n_pid == params.node_params_list.size(),
-               "The size of node_params_list should be equal to n_pid");
+            "The size of node_params_list should be equal to n_pid");
 
   pid_nodes_.reserve(params.n_pid);
   for (size_t i = 0; i < params.n_pid; ++i) {
@@ -66,8 +69,8 @@ T CascadedPid<T>::calc(const T& ref, const FdbVec& fdb_vec,
       fdb_vec.size() == base_params_.n_pid,
       "The size of feedback vector should be equal to the number of pid nodes");
   RU_ASSERT(ffd_vec.size() == base_params_.n_pid,
-               "The size of feedforward vector should be equal to the number "
-               "of pid nodes");
+            "The size of feedforward vector should be equal to the number "
+            "of pid nodes");
 
   T out = ref;
   for (size_t i = 0; i < base_params_.n_pid; ++i) {
@@ -81,8 +84,8 @@ template <typename T>
 void CascadedPid<T>::setNodeParams(const NodeParamsList& node_params_list)
 {
   RU_ASSERT(node_params_list.size() == base_params_.n_pid,
-               "The size of node_params_list should be equal to the number of "
-               "pid nodes");
+            "The size of node_params_list should be equal to the number of "
+            "pid nodes");
 
   for (size_t i = 0; i < base_params_.n_pid; ++i) {
     pid_nodes_[i].setParams(node_params_list[i]);
@@ -93,7 +96,7 @@ template <typename T>
 void CascadedPid<T>::setNodeParamsAt(size_t i, const NodeParams& node_params)
 {
   RU_ASSERT(i < base_params_.n_pid,
-               "The index of node_params should be less than n_pid");
+            "The index of node_params should be less than n_pid");
 
   pid_nodes_[i].setParams(node_params);
 }
@@ -102,7 +105,7 @@ template <typename T>
 ParallelPid<T>::ParallelPid(const Params& params) : base_params_(params)
 {
   RU_ASSERT(params.n_pid > 0,
-               "The number of pid nodes should be greater than 0");
+            "The number of pid nodes should be greater than 0");
 
   pid_nodes_.reserve(params.n_pid);
   for (size_t i = 0; i < params.n_pid; ++i) {
@@ -118,11 +121,11 @@ template <typename T>
 T ParallelPid<T>::calc(const RefVec& ref_vec, const FdbVec& fdb_vec)
 {
   RU_ASSERT(ref_vec.size() == base_params_.n_pid,
-               "The size of reference vector should be equal to the number of "
-               "pid nodes");
+            "The size of reference vector should be equal to the number of "
+            "pid nodes");
   RU_ASSERT(fdb_vec.size() == base_params_.n_pid,
-               "The size of feedback vector should be equal to the number of "
-               "pid nodes");
+            "The size of feedback vector should be equal to the number of "
+            "pid nodes");
 
   T out = 0;
   for (size_t i = 0; i < base_params_.n_pid; ++i) {
@@ -138,21 +141,18 @@ T ParallelPid<T>::calc(const RefVec& ref_vec, const FdbVec& fdb_vec)
 
 template <typename T>
 T ParallelPid<T>::calc(const RefVec& ref_vec, const FdbVec& fdb_vec,
-                       const FfdVec& ffd_vec)
+                       const T& ffd)
 {
   RU_ASSERT(ref_vec.size() == base_params_.n_pid,
-               "The size of reference vector should be equal to the number of "
-               "pid nodes");
+            "The size of reference vector should be equal to the number of "
+            "pid nodes");
   RU_ASSERT(fdb_vec.size() == base_params_.n_pid,
-               "The size of feedback vector should be equal to the number of "
-               "pid nodes");
-  RU_ASSERT(ffd_vec.size() == base_params_.n_pid,
-               "The size of feedforward vector should be equal to the number "
-               "of pid nodes");
+            "The size of feedback vector should be equal to the number of "
+            "pid nodes");
 
-  T out = 0;
+  T out = ffd;
   for (size_t i = 0; i < base_params_.n_pid; ++i) {
-    out += pid_nodes_[i].calc(ref_vec[i], fdb_vec[i], ffd_vec[i]);
+    out += pid_nodes_[i].calc(ref_vec[i], fdb_vec[i]);
   }
 
   if (base_params_.en_out_limit) {
@@ -176,8 +176,8 @@ template <typename T>
 void ParallelPid<T>::setNodeParams(const NodeParamsList& node_params_list)
 {
   RU_ASSERT(node_params_list.size() == base_params_.n_pid,
-               "The size of node_params_list should be equal to the number of "
-               "pid nodes");
+            "The size of node_params_list should be equal to the number of "
+            "pid nodes");
 
   for (size_t i = 0; i < base_params_.n_pid; ++i) {
     pid_nodes_[i].setParams(node_params_list[i]);
@@ -188,7 +188,7 @@ template <typename T>
 void ParallelPid<T>::setNodeParamsAt(size_t i, const NodeParams& node_params)
 {
   RU_ASSERT(i < base_params_.n_pid,
-               "The index of node_params should be less than n_pid");
+            "The index of node_params should be less than n_pid");
 
   pid_nodes_[i].setParams(node_params);
 }

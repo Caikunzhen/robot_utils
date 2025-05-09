@@ -95,7 +95,6 @@ struct PidNodeParams {
    * out_limit_ub: <value>
    * deadband_lb: <value>
    * deadband_ub: <value>
-   * en_trap_int: <value>
    * anti_windup_lb: <value>
    * anti_windup_ub: <value>
    * int_separate_lb: <value>
@@ -159,7 +158,6 @@ struct PidNodeParams {
    * out_limit_ub: <value>
    * deadband_lb: <value>
    * deadband_ub: <value>
-   * en_trap_int: <value>
    * anti_windup_lb: <value>
    * anti_windup_ub: <value>
    * int_separate_lb: <value>

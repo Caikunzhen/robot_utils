@@ -1,12 +1,15 @@
 /**
  *******************************************************************************
- * @file      : pid.hpp
- * @brief     :
- * @history   :
- *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
- *******************************************************************************
- * @attention :
+ * @file pid.hpp
+ * @brief Cascaded PID and parallel PID controller
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-05-09
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the pid.hpp
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
@@ -79,7 +82,6 @@ struct CascadedPidParams : public CascadedPidBaseParams<T> {
    *     out_limit_ub: <value>
    *     deadband_lb: <value>
    *     deadband_ub: <value>
-   *     en_trap_int: <value>
    *     anti_windup_lb: <value>
    *     anti_windup_ub: <value>
    *     int_separate_lb: <value>
@@ -107,6 +109,7 @@ struct CascadedPidParams : public CascadedPidBaseParams<T> {
     params.dt = node["dt"].as<T>();
     params.n_pid = node["n_pid"].as<size_t>();
     params.node_params_list.reserve(params.n_pid);
+    params.node_params_list.resize(params.n_pid);
 
     RU_ASSERT(params.n_pid == node["node_params_list"].size(),
               "The size of node_params_list should be equal to n_pid");
@@ -139,7 +142,6 @@ struct CascadedPidParams : public CascadedPidBaseParams<T> {
    *     out_limit_ub: <value>
    *     deadband_lb: <value>
    *     deadband_ub: <value>
-   *     en_trap_int: <value>
    *     anti_windup_lb: <value>
    *     anti_windup_ub: <value>
    *     int_separate_lb: <value>
@@ -214,7 +216,6 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
    *     out_limit_ub: <value>
    *     deadband_lb: <value>
    *     deadband_ub: <value>
-   *     en_trap_int: <value>
    *     anti_windup_lb: <value>
    *     anti_windup_ub: <value>
    *     int_separate_lb: <value>
@@ -245,6 +246,7 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
     params.n_pid = node["n_pid"].as<size_t>();
     params.en_out_limit = node["en_out_limit"].as<bool>();
     params.node_params_list.reserve(params.n_pid);
+    params.node_params_list.resize(params.n_pid);
 
     RU_ASSERT(params.n_pid == node["node_params_list"].size(),
               "The size of node_params_list should be equal to n_pid");
@@ -280,7 +282,6 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
    *     out_limit_ub: <value>
    *     deadband_lb: <value>
    *     deadband_ub: <value>
-   *     en_trap_int: <value>
    *     anti_windup_lb: <value>
    *     anti_windup_ub: <value>
    *     int_separate_lb: <value>
@@ -454,8 +455,6 @@ class ParallelPid
   using RefVec = Eigen::VectorX<T>;
   /// feedback vector
   using FdbVec = Eigen::VectorX<T>;
-  /// feedforward vector
-  using FfdVec = Eigen::VectorX<T>;
 
   /**
    * @brief Constructor of the parallel PID controller
@@ -500,13 +499,12 @@ class ParallelPid
    *
    * @par Pseudo code
    *
-   * \f$\qquad u \gets 0\f$
+   * \f$\qquad u \gets u^{ff}\f$
    *
    * \f$\qquad\mathbf{for}\text{ }i \gets 1 \text{ }\mathbf{to}\text{ } n \text{
    * }\mathbf{do}\f$
    *
-   * \f$\qquad\quad u \gets u + {\rm PidNode}_i\left(x_i^d, x_i,
-   * u_i^{ff}\right)\f$
+   * \f$\qquad\quad u \gets u + {\rm PidNode}_i\left(x_i^d, x_i\right)\f$
    *
    * \f$\qquad\mathbf{end for}\f$
    *
@@ -521,11 +519,10 @@ class ParallelPid
    * x_n^d\right]^T\f$, size = \f$n\f$
    * @param[in] fdb_vec: Feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
    * x_{n}\right]^T\f$, size = \f$n\f$
-   * @param[in] ffd_vec: Feedforward vector, \f$\vec{u}^{ff} = \left[u_1^{ff},
-   * u_2^{ff}, \dots, u_n^{ff}\right]^T\f$, size = \f$n\f$
+   * @param[in] ffd: Feedforward value, \f$u^{ff}\f$
    * @return Output value, \f$u\f$
    */
-  T calc(const RefVec& ref_vec, const FdbVec& fdb_vec, const FfdVec& ffd_vec);
+  T calc(const RefVec& ref_vec, const FdbVec& fdb_vec, const T& ffd);
 
   void reset(void)
   {
