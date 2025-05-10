@@ -85,29 +85,39 @@ struct PidNodeParams {
    * parameters are expected to be in the following format:
    *
    * ```yaml
-   * kp: <value>
-   * ki: <value>
-   * kd: <value>
-   * dt: <value>
+   * kp: 0
+   * ki: 0
+   * kd: 0
+   * dt: 0
+   * period: 0
    *
-   * period: <value>
-   * out_limit_lb: <value>
-   * out_limit_ub: <value>
-   * deadband_lb: <value>
-   * deadband_ub: <value>
-   * anti_windup_lb: <value>
-   * anti_windup_ub: <value>
-   * int_separate_lb: <value>
-   * int_separate_ub: <value>
-   * perv_diff_weight: <value>
-   * td_cutoff_freq: <value>
+   * en_out_limit: false
+   * # optional, can be deleted if en_out_limit is false
+   * out_limit_lb: 0
+   * out_limit_ub: 0
    *
-   * en_out_limit: <value>
-   * en_deadband: <value>
-   * en_trap_int: <value>
-   * en_anti_windup: <value>
-   * en_int_separate: <value>
-   * en_td: <value>
+   * en_deadband: false
+   * # optional, can be deleted if en_deadband is false
+   * deadband_lb: 0
+   * deadband_ub: 0
+   *
+   * en_trap_int: false
+   *
+   * en_anti_windup: false
+   * # optional, need to be set if en_anti_windup is true
+   * anti_windup_lb: 0
+   * anti_windup_ub: 0
+   *
+   * en_int_separate: false
+   * # optional, need to be set if en_int_separate is true
+   * int_separate_lb: 0
+   * int_separate_ub: 0
+   *
+   * perv_diff_weight: 0
+   *
+   * en_td: false
+   * # optional, need to be set if en_td is true
+   * td_cutoff_freq: 0
    * ```
    *
    * @param[in] node: YAML node containing the parameters
@@ -120,25 +130,34 @@ struct PidNodeParams {
     params.ki = node["ki"].as<T>();
     params.kd = node["kd"].as<T>();
     params.dt = node["dt"].as<T>();
-
     params.period = node["period"].as<T>();
-    params.out_limit_lb = node["out_limit_lb"].as<T>();
-    params.out_limit_ub = node["out_limit_ub"].as<T>();
-    params.deadband_lb = node["deadband_lb"].as<T>();
-    params.deadband_ub = node["deadband_ub"].as<T>();
-    params.anti_windup_lb = node["anti_windup_lb"].as<T>();
-    params.anti_windup_ub = node["anti_windup_ub"].as<T>();
-    params.int_separate_lb = node["int_separate_lb"].as<T>();
-    params.int_separate_ub = node["int_separate_ub"].as<T>();
-    params.perv_diff_weight = node["perv_diff_weight"].as<T>();
-    params.td_cutoff_freq = node["td_cutoff_freq"].as<T>();
 
     params.en_out_limit = node["en_out_limit"].as<bool>();
+    if (params.en_out_limit) {
+      params.out_limit_lb = node["out_limit_lb"].as<T>();
+      params.out_limit_ub = node["out_limit_ub"].as<T>();
+    }
     params.en_deadband = node["en_deadband"].as<bool>();
+    if (params.en_deadband) {
+      params.deadband_lb = node["deadband_lb"].as<T>();
+      params.deadband_ub = node["deadband_ub"].as<T>();
+    }
     params.en_trap_int = node["en_trap_int"].as<bool>();
     params.en_anti_windup = node["en_anti_windup"].as<bool>();
+    if (params.en_anti_windup) {
+      params.anti_windup_lb = node["anti_windup_lb"].as<T>();
+      params.anti_windup_ub = node["anti_windup_ub"].as<T>();
+    }
     params.en_int_separate = node["en_int_separate"].as<bool>();
+    if (params.en_int_separate) {
+      params.int_separate_lb = node["int_separate_lb"].as<T>();
+      params.int_separate_ub = node["int_separate_ub"].as<T>();
+    }
+    params.perv_diff_weight = node["perv_diff_weight"].as<T>();
     params.en_td = node["en_td"].as<bool>();
+    if (params.en_td) {
+      params.td_cutoff_freq = node["td_cutoff_freq"].as<T>();
+    }
   }
 
   /**
@@ -148,29 +167,39 @@ struct PidNodeParams {
    * parameters are expected to be in the following format:
    *
    * ```yaml
-   * kp: <value>
-   * ki: <value>
-   * kd: <value>
-   * dt: <value>
+   * kp: 0
+   * ki: 0
+   * kd: 0
+   * dt: 0
+   * period: 0
    *
-   * period: <value>
-   * out_limit_lb: <value>
-   * out_limit_ub: <value>
-   * deadband_lb: <value>
-   * deadband_ub: <value>
-   * anti_windup_lb: <value>
-   * anti_windup_ub: <value>
-   * int_separate_lb: <value>
-   * int_separate_ub: <value>
-   * perv_diff_weight: <value>
-   * td_cutoff_freq: <value>
+   * en_out_limit: false
+   * # optional, can be deleted if en_out_limit is false
+   * out_limit_lb: 0
+   * out_limit_ub: 0
    *
-   * en_out_limit: <value>
-   * en_deadband: <value>
-   * en_trap_int: <value>
-   * en_anti_windup: <value>
-   * en_int_separate: <value>
-   * en_td: <value>
+   * en_deadband: false
+   * # optional, can be deleted if en_deadband is false
+   * deadband_lb: 0
+   * deadband_ub: 0
+   *
+   * en_trap_int: false
+   *
+   * en_anti_windup: false
+   * # optional, need to be set if en_anti_windup is true
+   * anti_windup_lb: 0
+   * anti_windup_ub: 0
+   *
+   * en_int_separate: false
+   * # optional, need to be set if en_int_separate is true
+   * int_separate_lb: 0
+   * int_separate_ub: 0
+   *
+   * perv_diff_weight: 0
+   *
+   * en_td: false
+   * # optional, need to be set if en_td is true
+   * td_cutoff_freq: 0
    * ```
    *
    * @param[in] node: YAML node containing the parameters

@@ -47,8 +47,10 @@ struct MpcParams {
   size_t n = 0;        ///< number of states, \f$n\f$
   size_t m = 0;        ///< number of inputs, \f$m\f$
   size_t horizon = 0;  ///< prediction horizon, \f$N\f$
-  /// maximum number of iterations for QP solver
-  qpOASES::int_t max_iter = 100;
+  /// maximum number of iterations for QP solver, > 0
+  qpOASES::int_t max_iter = 200;
+  /// maximum cost time for QP solver, <= 0 means no limit
+  qpOASES::real_t max_cost_time = 0.01;
 
   /// state matrix, \f$A \in \mathbb{R}^{n \times n}\f$
   Eigen::MatrixX<real_t> A;
@@ -67,6 +69,9 @@ struct MpcParams {
   /// input upper bound, \f$u_{max} \in \mathbb{R}^m\f$
   Eigen::VectorX<real_t> u_max;
 
+  bool state_bound = false;  ///< whether to use state bound
+  bool input_bound = false;  ///< whether to use input bound
+
   /**
    * @brief Load parameters from YAML node
    *
@@ -74,17 +79,23 @@ struct MpcParams {
    * contain the following parameters:
    *
    * ```yaml
-   * n: <number of states>
-   * m: <number of inputs>
-   * horizon: <prediction horizon>
-   * max_iter: <maximum number of iterations>
+   * n: 0
+   * m: 0
+   * horizon: 0
+   * max_iter: 200
+   * max_cost_time: 0.01
    * A: [<A matrix values>] # optional, size (1, n * n), row-major order
    * B: [<B matrix values>] # optional, size (1, n * m), row-major order
    * Q_diag: [<Q matrix diagonal values>] # size (1, n)
    * P_diag: [<P matrix diagonal values>] # size (1, n)
    * R_diag: [<R matrix diagonal values>] # size (1, m)
+   * state_bound: false
+   * # optional, can be deleted if state_bound is false
    * x_min: [<x_min values>] # size (1, n)
    * x_max: [<x_max values>] # size (1, n)
+   *
+   * input_bound: false
+   * # optional, can be deleted if input_bound is false
    * u_min: [<u_min values>] # size (1, m)
    * u_max: [<u_max values>] # size (1, m)
    * ```
@@ -101,17 +112,23 @@ struct MpcParams {
    * contain the following parameters:
    *
    * ```yaml
-   * n: <number of states>
-   * m: <number of inputs>
-   * horizon: <prediction horizon>
-   * max_iter: <maximum number of iterations>
+   * n: 0
+   * m: 0
+   * horizon: 0
+   * max_iter: 0
+   * max_cost_time: 0.01
    * A: [<A matrix values>] # optional, size (1, n * n), row-major order
    * B: [<B matrix values>] # optional, size (1, n * m), row-major order
    * Q_diag: [<Q matrix diagonal values>] # size (1, n)
    * P_diag: [<P matrix diagonal values>] # size (1, n)
    * R_diag: [<R matrix diagonal values>] # size (1, m)
+   * state_bound: false
+   * # optional, can be deleted if state_bound is false
    * x_min: [<x_min values>] # size (1, n)
    * x_max: [<x_max values>] # size (1, n)
+   *
+   * input_bound: false
+   * # optional, can be deleted if input_bound is false
    * u_min: [<u_min values>] # size (1, m)
    * u_max: [<u_max values>] # size (1, m)
    * ```
@@ -167,6 +184,15 @@ class Mpc
   using DiagMatX = Eigen::DiagonalMatrix<real_t, Eigen::Dynamic>;
   using CtrlSeq = std::vector<InputVec>;
   using StateSeq = std::vector<StateVec>;
+
+  struct Data {
+    /// return value of QP solver
+    qpOASES::returnValue qp_ret = qpOASES::SUCCESSFUL_RETURN;
+    size_t iter = 0;                ///< number of iterations
+    qpOASES::real_t cost_time = 0;  ///< cost time, unit: s
+    bool can_hot_start = false;
+    bool solved = false;  ///< whether the QP problem is solved
+  };
 
   explicit Mpc(const Params& params);
   virtual ~Mpc(void) = default;
@@ -261,10 +287,13 @@ class Mpc
 
   /**
    * @brief Set the parameters of the MPC controller
-   * @param params: MPC parameters(`n`, `m` and `horizon` will be ignored)
+   * @param params: MPC parameters(`n`, `m`, `horizon`, `state_bound` and
+   * `input_bound` will be ignored)
    */
   void setParams(const Params& params);
   const Params& getParams(void) const { return params_; }
+
+  const Data& getData(void) const { return data_; }
 
  private:
   void calcSBar(void);
@@ -286,6 +315,7 @@ class Mpc
   void calcLbAUbA(void);
 
   Params params_;
+  Data data_;
 
   Eigen::VectorX<real_t> x0_;  ///< initial state, \f$x_0 \in \mathbb{R}^n\f$
   /// input transition matrix, \f$\bar S \in \mathbb{R}^{nN \times mN}\f$
@@ -303,14 +333,19 @@ class Mpc
   Eigen::VectorX<real_t> g_;
   /// lower bound vector, \f$^{qp}U_{min} \in \mathbb{R}^{mN}\f$
   Eigen::VectorX<real_t> lb_;
+  const real_t* lb_ptr_ = nullptr;
   /// upper bound vector, \f$^{qp}U_{max} \in \mathbb{R}^{mN}\f$
   Eigen::VectorX<real_t> ub_;
+  const real_t* ub_ptr_ = nullptr;
   /// constraint matrix, \f$^{qp}A \in \mathbb{R}^{nN \times mN}\f$
   Eigen::Matrix<real_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A_;
+  const real_t* A_ptr_ = nullptr;
   /// lower bound vector for constraints, \f$^{qp}b_{min} \in \mathbb{R}^{nN}\f$
   Eigen::VectorX<real_t> lbA_;
+  const real_t* lbA_ptr_ = nullptr;
   /// upper bound vector for constraints, \f$^{qp}b_{max} \in \mathbb{R}^{nN}\f$
   Eigen::VectorX<real_t> ubA_;
+  const real_t* ubA_ptr_ = nullptr;
   /**
    * @brief input vector, \f$^{qp}U = \left[u_0^T, u_1^T, \ldots,
    * u_{N-1}^T\right]^T \in \mathbb{R}^{mN}\f$
@@ -318,8 +353,6 @@ class Mpc
   Eigen::VectorX<real_t> U_;
 
   qpOASES::QProblem qp_;
-  bool can_hot_start_ = false;
-  bool solved_ = false;  ///< whether the QP problem is solved
 };
 /* Exported variables --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/

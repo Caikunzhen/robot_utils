@@ -35,6 +35,7 @@ void OmmpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   params.m = node["m"].as<size_t>();
   params.horizon = node["horizon"].as<size_t>();
   params.max_iter = node["max_iter"].as<qpOASES::int_t>();
+  params.max_cost_time = node["max_cost_time"].as<qpOASES::real_t>();
   params.dt = node["dt"].as<real_t>();
 
   params.Q.resize(params.n);
@@ -64,26 +65,30 @@ void OmmpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
     params.R.diagonal()[i] = R_diag[i];
   }
 
-  params.u_min.resize(params.m);
-  std::vector<real_t> u_min = node["u_min"].as<std::vector<real_t>>();
-  RU_ASSERT(u_min.size() == params.m,
-            "u_min size is not correct, expected size: %d, actual size: %d",
-            params.m, u_min.size());
-  for (size_t i = 0; i < params.m; ++i) {
-    params.u_min(i) = u_min[i];
-  }
+  params.input_bound = node["input_bound"].as<bool>();
+  if (params.input_bound) {
+    params.u_min.resize(params.m);
+    std::vector<real_t> u_min = node["u_min"].as<std::vector<real_t>>();
+    RU_ASSERT(u_min.size() == params.m,
+              "u_min size is not correct, expected size: %d, actual size: %d",
+              params.m, u_min.size());
+    for (size_t i = 0; i < params.m; ++i) {
+      params.u_min(i) = u_min[i];
+    }
 
-  params.u_max.resize(params.m);
-  std::vector<real_t> u_max = node["u_max"].as<std::vector<real_t>>();
-  RU_ASSERT(u_max.size() == params.m,
-            "u_max size is not correct, expected size: %d, actual size: %d",
-            params.m, u_max.size());
-  for (size_t i = 0; i < params.m; ++i) {
-    params.u_max(i) = u_max[i];
+    params.u_max.resize(params.m);
+    std::vector<real_t> u_max = node["u_max"].as<std::vector<real_t>>();
+    RU_ASSERT(u_max.size() == params.m,
+              "u_max size is not correct, expected size: %d, actual size: %d",
+              params.m, u_max.size());
+    for (size_t i = 0; i < params.m; ++i) {
+      params.u_max(i) = u_max[i];
+    }
   }
 }
 
-Ommpc::Ommpc(const Params& params) : qp_(params.m * params.horizon, 0)
+Ommpc::Ommpc(const Params& params)
+    : qp_(params.m * params.horizon, qpOASES::HST_SEMIDEF)
 {
   RU_ASSERT(params.n > 0, "The number of states must be greater than 0");
   RU_ASSERT(params.m > 0, "The number of inputs must be greater than 0");
@@ -94,6 +99,7 @@ Ommpc::Ommpc(const Params& params) : qp_(params.m * params.horizon, 0)
   params_.n = params.n;
   params_.m = params.m;
   params_.horizon = params.horizon;
+  params_.input_bound = params.input_bound;
   params_.dt = params.dt;
   const size_t& n = params_.n;
   const size_t& m = params_.m;
@@ -103,8 +109,12 @@ Ommpc::Ommpc(const Params& params) : qp_(params.m * params.horizon, 0)
   dU_ = Eigen::MatrixX<real_t>::Zero(N * m, 1);
   Q_bar_.resize(N * n);
   R_bar_.resize(N * m);
-  lb_.resize(N * m);
-  ub_.resize(N * m);
+  if (params_.input_bound) {
+    lb_.resize(N * m);
+    ub_.resize(N * m);
+    lb_ptr_ = lb_.data();
+    ub_ptr_ = ub_.data();
+  }
   setParams(params);
 
   qpOASES::Options op;
@@ -153,8 +163,10 @@ bool Ommpc::solve(const StateSeq& x_ref_seq, const CtrlSeq& u_ref_seq,
     S_bar_.block(i * n, i * m, n, m) = F_u_i;
     F_x_mul = F_x_i * F_x_mul;
     T_bar_.block(i * n, 0, n, n) = F_x_mul;
-    lb_.segment(i * m, m) = params_.u_min - u_ref_seq[i];
-    ub_.segment(i * m, m) = params_.u_max - u_ref_seq[i];
+    if (params_.input_bound) {
+      lb_.segment(i * m, m) = params_.u_min - u_ref_seq[i];
+      ub_.segment(i * m, m) = params_.u_max - u_ref_seq[i];
+    }
   }
 
   Eigen::MatrixX<real_t> tmp = S_bar_.transpose() * Q_bar_;
@@ -183,19 +195,24 @@ bool Ommpc::solve(const StateSeq& x_ref_seq, const CtrlSeq& u_ref_seq,
    * \delta\ ^{qp}U_{min} \leq\delta\ ^{qp}U \leq\delta\ ^{qp}U_{max}
    * \f]
    */
-  qpOASES::returnValue ret;
   qpOASES::int_t nWSR = params_.max_iter;
-  ret = qp_.init(H_.data(), g_.data(), nullptr, lb_.data(), ub_.data(), nullptr,
-                 nullptr, nWSR);
+  real_t cputime = params_.max_cost_time;
+  if (params_.max_cost_time <= 0) {
+    cputime = 100;
+  }
+  data_.qp_ret =
+      qp_.init(H_.data(), g_.data(), lb_ptr_, ub_ptr_, nWSR, &cputime);
 
-  if (ret != qpOASES::SUCCESSFUL_RETURN) {
-    solved_ = false;
+  data_.iter = nWSR;
+  data_.cost_time = cputime;
+  if (data_.qp_ret != qpOASES::SUCCESSFUL_RETURN) {
+    data_.solved = false;
   } else {
     qp_.getPrimalSolution(dU_.data());
-    solved_ = true;
+    data_.solved = true;
   }
 
-  return solved_;
+  return data_.solved;
 }
 
 void Ommpc::getCtrl(InputVec& u, size_t forward_steps) const
@@ -204,7 +221,7 @@ void Ommpc::getCtrl(InputVec& u, size_t forward_steps) const
     forward_steps = params_.horizon - 1;
   }
 
-  if (!solved_) {
+  if (!data_.solved) {
     RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
@@ -214,7 +231,7 @@ void Ommpc::getCtrl(InputVec& u, size_t forward_steps) const
 
 void Ommpc::getCtrlSeq(CtrlSeq& u_seq) const
 {
-  if (!solved_) {
+  if (!data_.solved) {
     RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
@@ -226,7 +243,7 @@ void Ommpc::getCtrlSeq(CtrlSeq& u_seq) const
 
 void Ommpc::getPredStateSeq(StateSeq& x_seq) const
 {
-  if (!solved_) {
+  if (!data_.solved) {
     RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
@@ -252,19 +269,25 @@ void Ommpc::setParams(const Params& params)
             "R must be a square matrix of size (m, m)");
   RU_ASSERT(params.P.rows() == params_.n && params.P.cols() == params_.n,
             "P must be a square matrix of size (n, n)");
-  RU_ASSERT(params.u_min.size() == params_.m, "u_min_ size must be equal to m");
-  RU_ASSERT(params.u_max.size() == params_.m, "u_max_ size must be equal to m");
+  if (params_.input_bound) {
+    RU_ASSERT(params.u_min.size() == params_.m,
+              "u_min size must be equal to m");
+    RU_ASSERT(params.u_max.size() == params_.m,
+              "u_max size must be equal to m");
+  }
 
   size_t n = params_.n;
   size_t m = params_.m;
   size_t horizon = params_.horizon;
   real_t dt = params_.dt;
+  bool input_bound = params_.input_bound;
   params_ = params;
   params_.dt = dt;
   params_.n = n;
   params_.m = m;
   params_.horizon = horizon;
   params_.dt = dt;
+  params_.input_bound = input_bound;
 
   calcQBar();
 

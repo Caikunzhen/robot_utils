@@ -65,8 +65,9 @@ struct OmmpcParams {
   size_t m = 0;        ///< number of inputs, \f$m\f$
   size_t horizon = 0;  ///< prediction horizon, \f$N\f$
   /// maximum number of iterations for QP solver
-  qpOASES::int_t max_iter = 100;
-  real_t dt = 0;  ///< time step, \f$\Delta t\f$
+  qpOASES::int_t max_iter = 200;
+  qpOASES::real_t max_cost_time = 0.01;  ///< maximum cost time, unit: s
+  real_t dt = 0.01;                      ///< time step, \f$\Delta t\f$
 
   DynFunc f;
   /**
@@ -101,6 +102,8 @@ struct OmmpcParams {
   /// input upper bound, \f$u_{max} \in \mathbb{R}^m\f$
   Eigen::VectorX<real_t> u_max;
 
+  bool input_bound = false;  ///< whether to use input bound
+
   /**
    * @brief Load parameters from YAML node
    *
@@ -108,14 +111,17 @@ struct OmmpcParams {
    * contain the following parameters:
    *
    * ```yaml
-   * n: <number of states>
-   * m: <number of inputs>
-   * horizon: <prediction horizon>
-   * max_iter: <maximum number of iterations>
-   * dt: <time step>
+   * n: 0
+   * m: 0
+   * horizon: 0
+   * max_iter: 200
+   * max_cost_time: 0.01
+   * dt: 0.01
    * Q_diag: [<Q matrix diagonal values>] # size (1, n)
    * P_diag: [<P matrix diagonal values>] # size (1, n)
    * R_diag: [<R matrix diagonal values>] # size (1, m)
+   * input_bound: false
+   * # optional, can be deleted if input_bound is false
    * u_min: [<u_min values>] # size (1, m)
    * u_max: [<u_max values>] # size (1, m)
    * ```
@@ -133,13 +139,17 @@ struct OmmpcParams {
    * contain the following parameters:
    *
    * ```yaml
-   * n: <number of states>
-   * m: <number of inputs>
-   * horizon: <prediction horizon>
-   * max_iter: <maximum number of iterations>
+   * n: 0
+   * m: 0
+   * horizon: 0
+   * max_iter: 200
+   * max_cost_time: 0.01
+   * dt: 0.01
    * Q_diag: [<Q matrix diagonal values>] # size (1, n)
    * P_diag: [<P matrix diagonal values>] # size (1, n)
    * R_diag: [<R matrix diagonal values>] # size (1, m)
+   * input_bound: false
+   * # optional, can be deleted if input_bound is false
    * u_min: [<u_min values>] # size (1, m)
    * u_max: [<u_max values>] # size (1, m)
    * ```
@@ -172,6 +182,14 @@ class Ommpc
   using DiagMatX = Eigen::DiagonalMatrix<real_t, Eigen::Dynamic>;
   using CtrlSeq = std::vector<InputVec>;
   using StateSeq = std::vector<StateVec>;
+
+  struct Data {
+    /// return value of QP solver
+    qpOASES::returnValue qp_ret = qpOASES::SUCCESSFUL_RETURN;
+    size_t iter = 0;                ///< number of iterations
+    qpOASES::real_t cost_time = 0;  ///< cost time, unit: s
+    bool solved = false;            ///< whether the QP problem is solved
+  };
 
   explicit Ommpc(const Params& params);
   virtual ~Ommpc(void) = default;
@@ -272,8 +290,8 @@ class Ommpc
 
   /**
    * @brief Set the parameters of the OMMPC controller
-   * @param params: OMMPC parameters(`n`, `m`, `horizon` and `dt` will be
-   * ignored)
+   * @param params: OMMPC parameters(`n`, `m`, `horizon`, `dt` and `input_bound`
+   * will be ignored)
    */
   void setParams(const Params& params);
   const Params& getParams(void) const { return params_; }
@@ -297,6 +315,7 @@ class Ommpc
                    Eigen::MatrixX<real_t>& F_x, Eigen::MatrixX<real_t>& F_u);
 
   Params params_;
+  Data data_;
 
   /// initial state, \f$\delta\mathrm{x}_0 \in \mathbb{R}^n\f$
   Eigen::VectorX<real_t> dx0_;
@@ -326,16 +345,17 @@ class Ommpc
   Eigen::VectorX<real_t> g_;
   /// lower bound vector, \f$\delta\ ^{qp}U_{min} \in \mathbb{R}^{mN}\f$
   Eigen::VectorX<real_t> lb_;
+  real_t* lb_ptr_ = nullptr;
   /// upper bound vector, \f$\delta\ ^{qp}U_{max} \in \mathbb{R}^{mN}\f$
   Eigen::VectorX<real_t> ub_;
+  real_t* ub_ptr_ = nullptr;
   /**
    * @brief delta input vector, \f$\delta\ ^{qp}U = \left[\delta u_0^T, \delta
    * u_1^T, \ldots, \delta u_{N-1}^T\right]^T \in \mathbb{R}^{mN}\f$
    */
   Eigen::VectorX<real_t> dU_;
 
-  qpOASES::QProblem qp_;
-  bool solved_ = false;  ///< whether the QP problem is solved
+  qpOASES::QProblemB qp_;
 };
 /* Exported variables --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/

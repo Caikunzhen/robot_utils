@@ -47,9 +47,10 @@ struct LqrParams {
 
   using DiagMatX = Eigen::DiagonalMatrix<T, Eigen::Dynamic>;
 
-  size_t n = 0;                  ///< number of states, \f$n\f$
-  size_t m = 0;                  ///< number of inputs, \f$m\f$
-  size_t max_iter = 100;         ///< maximum number of iterations
+  size_t n = 0;            ///< number of states, \f$n\f$
+  size_t m = 0;            ///< number of inputs, \f$m\f$
+  size_t max_iter = 1000;  ///< maximum number of iterations, 0 means no limit
+  T max_cost_time = 1e-3;  ///< maximum cost time, <= 0 means no limit
   T tol = static_cast<T>(1e-6);  ///< tolerance for convergence
 
   Eigen::MatrixX<T> A;  ///< system matrix, \f$A \in \mathbb{R}^{n \times n}\f$
@@ -64,10 +65,11 @@ struct LqrParams {
    * contain the following parameters:
    *
    * ```yaml
-   * n: <number of states>
-   * m: <number of inputs>
-   * max_iter: <maximum number of iterations>
-   * tol: <tolerance for convergence>
+   * n: 0
+   * m: 0
+   * max_iter: 1000
+   * max_cost_time: 1e-3
+   * tol: 1e-6
    * A: [<A matrix values>] # optional, size (1, n * n), row-major order
    * B: [<B matrix values>] # optional, size (1, n * m), row-major order
    * Q_diag: [<Q matrix diagonal values>] # size (1, n)
@@ -82,6 +84,7 @@ struct LqrParams {
     params.n = node["n"].as<size_t>();
     params.m = node["m"].as<size_t>();
     params.max_iter = node["max_iter"].as<size_t>();
+    params.max_cost_time = node["max_cost_time"].as<T>();
     params.tol = node["tol"].as<T>();
 
     if (node["A"]) {
@@ -140,10 +143,11 @@ struct LqrParams {
    * contain the following parameters:
    *
    * ```yaml
-   * n: <number of states>
-   * m: <number of inputs>
-   * max_iter: <maximum number of iterations>
-   * tol: <tolerance for convergence>
+   * n: 0
+   * m: 0
+   * max_iter: 1000
+   * max_cost_time: 1e-3
+   * tol: 1e-6
    * A: [<A matrix values>] # optional, size (1, n * n), row-major order
    * B: [<B matrix values>] # optional, size (1, n * m), row-major order
    * Q_diag: [<Q matrix diagonal values>] # size (1, n)
@@ -201,6 +205,8 @@ class Lqr
     /// solution to the Riccati equation, \f$P \in \mathbb{R}^{n \times n}\f$
     Eigen::MatrixX<T> P;
     T res = std::numeric_limits<T>::max();  ///< residual of the cost function
+    T cost_time = 0;                        ///< cost time, unit: s
+    size_t iter = 0;                        ///< number of iterations
     bool is_converged = false;
   };
 
@@ -210,6 +216,8 @@ class Lqr
   /**
    * @brief Solve the LQR problem
    * @return true if converged, false if not
+   * @note This function will only iterate up to 1e8 times to avoid infinite
+   * loop.
    */
   bool solve(void);
 

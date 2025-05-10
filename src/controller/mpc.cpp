@@ -36,6 +36,7 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
   params.m = node["m"].as<size_t>();
   params.horizon = node["horizon"].as<size_t>();
   params.max_iter = node["max_iter"].as<qpOASES::int_t>();
+  params.max_cost_time = node["max_cost_time"].as<qpOASES::real_t>();
 
   if (node["A"]) {
     params.A.resize(params.n, params.n);
@@ -92,45 +93,50 @@ void MpcParams::LoadParamsFromYamlNode(const YAML::Node& node,
     params.R.diagonal()[i] = R_diag[i];
   }
 
-  params.x_min.resize(params.n);
-  std::vector<real_t> x_min = node["x_min"].as<std::vector<real_t>>();
-  RU_ASSERT(x_min.size() == params.n,
-            "x_min size is not correct, expected size: %d, actual size: %d",
-            params.n, x_min.size());
-  for (size_t i = 0; i < params.n; ++i) {
-    params.x_min(i) = x_min[i];
+  params.state_bound = node["state_bound"].as<bool>();
+  if (params.state_bound) {
+    params.x_min.resize(params.n);
+    std::vector<real_t> x_min = node["x_min"].as<std::vector<real_t>>();
+    RU_ASSERT(x_min.size() == params.n,
+              "x_min size is not correct, expected size: %d, actual size: %d",
+              params.n, x_min.size());
+    for (size_t i = 0; i < params.n; ++i) {
+      params.x_min(i) = x_min[i];
+    }
+
+    params.x_max.resize(params.n);
+    std::vector<real_t> x_max = node["x_max"].as<std::vector<real_t>>();
+    RU_ASSERT(x_max.size() == params.n,
+              "x_max size is not correct, expected size: %d, actual size: %d",
+              params.n, x_max.size());
+    for (size_t i = 0; i < params.n; ++i) {
+      params.x_max(i) = x_max[i];
+    }
   }
 
-  params.x_max.resize(params.n);
-  std::vector<real_t> x_max = node["x_max"].as<std::vector<real_t>>();
-  RU_ASSERT(x_max.size() == params.n,
-            "x_max size is not correct, expected size: %d, actual size: %d",
-            params.n, x_max.size());
-  for (size_t i = 0; i < params.n; ++i) {
-    params.x_max(i) = x_max[i];
-  }
+  params.input_bound = node["input_bound"].as<bool>();
+  if (params.input_bound) {
+    params.u_min.resize(params.m);
+    std::vector<real_t> u_min = node["u_min"].as<std::vector<real_t>>();
+    RU_ASSERT(u_min.size() == params.m,
+              "u_min size is not correct, expected size: %d, actual size: %d",
+              params.m, u_min.size());
+    for (size_t i = 0; i < params.m; ++i) {
+      params.u_min(i) = u_min[i];
+    }
 
-  params.u_min.resize(params.m);
-  std::vector<real_t> u_min = node["u_min"].as<std::vector<real_t>>();
-  RU_ASSERT(u_min.size() == params.m,
-            "u_min size is not correct, expected size: %d, actual size: %d",
-            params.m, u_min.size());
-  for (size_t i = 0; i < params.m; ++i) {
-    params.u_min(i) = u_min[i];
-  }
-
-  params.u_max.resize(params.m);
-  std::vector<real_t> u_max = node["u_max"].as<std::vector<real_t>>();
-  RU_ASSERT(u_max.size() == params.m,
-            "u_max size is not correct, expected size: %d, actual size: %d",
-            params.m, u_max.size());
-  for (size_t i = 0; i < params.m; ++i) {
-    params.u_max(i) = u_max[i];
+    params.u_max.resize(params.m);
+    std::vector<real_t> u_max = node["u_max"].as<std::vector<real_t>>();
+    RU_ASSERT(u_max.size() == params.m,
+              "u_max size is not correct, expected size: %d, actual size: %d",
+              params.m, u_max.size());
+    for (size_t i = 0; i < params.m; ++i) {
+      params.u_max(i) = u_max[i];
+    }
   }
 }
 
 Mpc::Mpc(const Params& params)
-    : qp_(params.m * params.horizon, params.n * params.horizon)
 {
   RU_ASSERT(params.n > 0, "The number of states must be greater than 0");
   RU_ASSERT(params.m > 0, "The number of inputs must be greater than 0");
@@ -140,6 +146,8 @@ Mpc::Mpc(const Params& params)
   params_.n = params.n;
   params_.m = params.m;
   params_.horizon = params.horizon;
+  params_.state_bound = params.state_bound;
+  params_.input_bound = params.input_bound;
   const size_t& n = params_.n;
   const size_t& m = params_.m;
   const size_t& N = params_.horizon;
@@ -153,6 +161,11 @@ Mpc::Mpc(const Params& params)
   qpOASES::Options op;
   op.setToMPC();
   op.printLevel = qpOASES::PL_NONE;
+  if (params_.state_bound) {
+    qp_ = qpOASES::QProblem(m * N, n * N, qpOASES::HST_SEMIDEF);
+  } else {
+    qp_ = qpOASES::QProblem(m * N, 0, qpOASES::HST_SEMIDEF);
+  }
   qp_.setOptions(op);
 }
 
@@ -164,11 +177,17 @@ bool Mpc::solve(const StateSeq& x_ref_seq, const StateVec& x0, bool force_init)
 
   x0_ = x0;
   calcG(x_ref_seq);
-  calcLbAUbA();
-
-  qpOASES::returnValue ret;
+  if (params_.state_bound) {
+    calcLbAUbA();
+    lbA_ptr_ = lbA_.data();
+    ubA_ptr_ = ubA_.data();
+  }
 
   qpOASES::int_t nWSR = params_.max_iter;
+  real_t cputime = params_.max_cost_time;
+  if (params_.max_cost_time <= 0) {
+    cputime = 100;
+  }
 
   /**
    * solve the QP problem
@@ -190,23 +209,25 @@ bool Mpc::solve(const StateSeq& x_ref_seq, const StateVec& x0, bool force_init)
    * ^{qp}U_{min} \leq\ ^{qp}U \leq\ ^{qp}U_{max}
    * \f]
    */
-  if (!can_hot_start_ || force_init) {
-    ret = qp_.init(H_.data(), g_.data(), A_.data(), lb_.data(), ub_.data(),
-                   lbA_.data(), ubA_.data(), nWSR);
-    can_hot_start_ = true;
+  if (!data_.can_hot_start || force_init) {
+    data_.qp_ret = qp_.init(H_.data(), g_.data(), A_ptr_, lb_ptr_, ub_ptr_,
+                            lbA_ptr_, ubA_ptr_, nWSR, &cputime);
+    data_.can_hot_start = true;
   } else {
-    ret = qp_.hotstart(g_.data(), lb_.data(), ub_.data(), lbA_.data(),
-                       ubA_.data(), nWSR);
+    data_.qp_ret = qp_.hotstart(g_.data(), lb_ptr_, ub_ptr_, lbA_ptr_, ubA_ptr_,
+                                nWSR, &cputime);
   }
 
-  if (ret != qpOASES::SUCCESSFUL_RETURN) {
-    solved_ = false;
+  data_.iter = nWSR;
+  data_.cost_time = cputime;
+  if (data_.qp_ret != qpOASES::SUCCESSFUL_RETURN) {
+    data_.solved = false;
   } else {
     qp_.getPrimalSolution(U_.data());
-    solved_ = true;
+    data_.solved = true;
   }
 
-  return solved_;
+  return data_.solved;
 }
 
 void Mpc::getCtrl(InputVec& u, size_t forward_steps) const
@@ -215,7 +236,7 @@ void Mpc::getCtrl(InputVec& u, size_t forward_steps) const
     forward_steps = params_.horizon - 1;
   }
 
-  if (!solved_) {
+  if (!data_.solved) {
     RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
@@ -224,7 +245,7 @@ void Mpc::getCtrl(InputVec& u, size_t forward_steps) const
 
 void Mpc::getCtrlSeq(CtrlSeq& u_seq) const
 {
-  if (!solved_) {
+  if (!data_.solved) {
     RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
@@ -236,7 +257,7 @@ void Mpc::getCtrlSeq(CtrlSeq& u_seq) const
 
 void Mpc::getPredStateSeq(StateSeq& x_seq) const
 {
-  if (!solved_) {
+  if (!data_.solved) {
     RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
@@ -262,18 +283,30 @@ void Mpc::setParams(const Params& params)
             "R must be a square matrix of size (m, m)");
   RU_ASSERT(params.P.rows() == params_.n && params.P.cols() == params_.n,
             "P must be a square matrix of size (n, n)");
-  RU_ASSERT(params.x_min.size() == params_.n, "x_min_ size must be equal to n");
-  RU_ASSERT(params.x_max.size() == params_.n, "x_max_ size must be equal to n");
-  RU_ASSERT(params.u_min.size() == params_.m, "u_min_ size must be equal to m");
-  RU_ASSERT(params.u_max.size() == params_.m, "u_max_ size must be equal to m");
+  if (params_.state_bound) {
+    RU_ASSERT(params.x_min.size() == params_.n,
+              "x_min size must be equal to n");
+    RU_ASSERT(params.x_max.size() == params_.n,
+              "x_max size must be equal to n");
+  }
+  if (params_.input_bound) {
+    RU_ASSERT(params.u_min.size() == params_.m,
+              "u_min size must be equal to m");
+    RU_ASSERT(params.u_max.size() == params_.m,
+              "u_max size must be equal to m");
+  }
 
   size_t n = params_.n;
   size_t m = params_.m;
   size_t horizon = params_.horizon;
+  bool state_bound = params_.state_bound;
+  bool input_bound = params_.input_bound;
   params_ = params;
   params_.n = n;
   params_.m = m;
   params_.horizon = horizon;
+  params_.state_bound = state_bound;
+  params_.input_bound = input_bound;
 
   calcSBar();
 
@@ -285,11 +318,18 @@ void Mpc::setParams(const Params& params)
 
   calcH();
 
-  calcA();
+  if (params_.state_bound) {
+    calcA();
+    A_ptr_ = A_.data();
+  }
 
-  calcLbUb();
+  if (params_.input_bound) {
+    calcLbUb();
+    lb_ptr_ = lb_.data();
+    ub_ptr_ = ub_.data();
+  }
 
-  can_hot_start_ = false;
+  data_.can_hot_start = false;
 }
 
 void Mpc::calcSBar(void)

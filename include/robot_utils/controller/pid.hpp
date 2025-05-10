@@ -68,33 +68,43 @@ struct CascadedPidParams : public CascadedPidBaseParams<T> {
    * parameters are expected to be in the following format:
    *
    * ```yaml
-   * dt: <value>
-   * n_pid: <value>
+   * dt: 0
+   * n_pid: 0
    *
    * node_params_list:
-   *   - kp: <value>
-   *     ki: <value>
-   *     kd: <value>
-   *     dt: <value>  # not used
+   *   - kp: 0
+   *     ki: 0
+   *     kd: 0
+   *     dt: 0  # not used
+   *     period: 0
    *
-   *     period: <value>
-   *     out_limit_lb: <value>
-   *     out_limit_ub: <value>
-   *     deadband_lb: <value>
-   *     deadband_ub: <value>
-   *     anti_windup_lb: <value>
-   *     anti_windup_ub: <value>
-   *     int_separate_lb: <value>
-   *     int_separate_ub: <value>
-   *     perv_diff_weight: <value>
-   *     td_cutoff_freq: <value>
+   *     en_out_limit: false
+   *     # optional, need to be set if en_out_limit is true
+   *     out_limit_lb: 0
+   *     out_limit_ub: 0
    *
-   *     en_out_limit: <value>
-   *     en_deadband: <value>
-   *     en_trap_int: <value>
-   *     en_anti_windup: <value>
-   *     en_int_separate: <value>
-   *     en_td: <value>
+   *     en_deadband: false
+   *     # optional, need to be set if en_deadband is true
+   *     deadband_lb: 0
+   *     deadband_ub: 0
+   *
+   *     en_trap_int: false
+   *
+   *     en_anti_windup: false
+   *     # optional, need to be set if en_anti_windup is true
+   *     anti_windup_lb: 0
+   *     anti_windup_ub: 0
+   *
+   *     en_int_separate: false
+   *     # optional, need to be set if en_int_separate is true
+   *     int_separate_lb: 0
+   *     int_separate_ub: 0
+   *
+   *     perv_diff_weight: 0
+   *
+   *     en_td: false
+   *     # optional, need to be set if en_td is true
+   *     td_cutoff_freq: 0
    *   - ...
    * ```
    *
@@ -128,33 +138,44 @@ struct CascadedPidParams : public CascadedPidBaseParams<T> {
    * parameters are expected to be in the following format:
    *
    * ```yaml
-   * dt: <value>
-   * n_pid: <value>
+   * dt: 0
+   * n_pid: 0
    *
    * node_params_list:
-   *   - kp: <value>
-   *     ki: <value>
-   *     kd: <value>
-   *     dt: <value>  # not used
+   *   - kp: 0
+   *     ki: 0
+   *     kd: 0
+   *     dt: 0  # not used
+   *     period: 0
    *
-   *     period: <value>
-   *     out_limit_lb: <value>
-   *     out_limit_ub: <value>
-   *     deadband_lb: <value>
-   *     deadband_ub: <value>
-   *     anti_windup_lb: <value>
-   *     anti_windup_ub: <value>
-   *     int_separate_lb: <value>
-   *     int_separate_ub: <value>
-   *     perv_diff_weight: <value>
-   *     td_cutoff_freq: <value>
+   *     en_out_limit: false
+   *     # optional, need to be set if en_out_limit is true
+   *     out_limit_lb: 0
+   *     out_limit_ub: 0
    *
-   *     en_out_limit: <value>
-   *     en_deadband: <value>
-   *     en_trap_int: <value>
-   *     en_anti_windup: <value>
-   *     en_int_separate: <value>
-   *     en_td: <value>
+   *     en_deadband: false
+   *     # optional, need to be set if en_deadband is true
+   *     deadband_lb: 0
+   *     deadband_ub: 0
+   *
+   *     en_trap_int: false
+   *
+   *     en_anti_windup: false
+   *     # optional, need to be set if en_anti_windup is true
+   *     anti_windup_lb: 0
+   *     anti_windup_ub: 0
+   *
+   *     en_int_separate: false
+   *     # optional, need to be set if en_int_separate is true
+   *     int_separate_lb: 0
+   *     int_separate_ub: 0
+   *
+   *     perv_diff_weight: 0
+   *
+   *     en_td: false
+   *     # optional, need to be set if en_td is true
+   *     td_cutoff_freq: 0
+   *   - ...
    * ```
    *
    * @param[in] node: YAML node containing the parameters
@@ -199,36 +220,47 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
    * parameters are expected to be in the following format:
    *
    * ```yaml
-   * dt: <value>
-   * out_limit_lb: <value>
-   * out_limit_ub: <value>
-   * n_pid: <value>
-   * en_out_limit: <value>
+   * dt: 0
+   * n_pid: 0
+   * en_out_limit: false
+   * # optional, can be deleted if en_out_limit is false
+   * out_limit_lb: 0
+   * out_limit_ub: 0
    *
    * node_params_list:
-   *   - kp: <value>
-   *     ki: <value>
-   *     kd: <value>
-   *     dt: <value>  # not used
+   *   - kp: 0
+   *     ki: 0
+   *     kd: 0
+   *     dt: 0  # not used
+   *     period: 0
    *
-   *     period: <value>
-   *     out_limit_lb: <value>
-   *     out_limit_ub: <value>
-   *     deadband_lb: <value>
-   *     deadband_ub: <value>
-   *     anti_windup_lb: <value>
-   *     anti_windup_ub: <value>
-   *     int_separate_lb: <value>
-   *     int_separate_ub: <value>
-   *     perv_diff_weight: <value>
-   *     td_cutoff_freq: <value>
+   *     en_out_limit: false
+   *     # optional, need to be set if en_out_limit is true
+   *     out_limit_lb: 0
+   *     out_limit_ub: 0
    *
-   *     en_out_limit: <value>
-   *     en_deadband: <value>
-   *     en_trap_int: <value>
-   *     en_anti_windup: <value>
-   *     en_int_separate: <value>
-   *     en_td: <value>
+   *     en_deadband: false
+   *     # optional, need to be set if en_deadband is true
+   *     deadband_lb: 0
+   *     deadband_ub: 0
+   *
+   *     en_trap_int: false
+   *
+   *     en_anti_windup: false
+   *     # optional, need to be set if en_anti_windup is true
+   *     anti_windup_lb: 0
+   *     anti_windup_ub: 0
+   *
+   *     en_int_separate: false
+   *     # optional, need to be set if en_int_separate is true
+   *     int_separate_lb: 0
+   *     int_separate_ub: 0
+   *
+   *     perv_diff_weight: 0
+   *
+   *     en_td: false
+   *     # optional, need to be set if en_td is true
+   *     td_cutoff_freq: 0
    *  - ...
    * ```
    *
@@ -241,10 +273,12 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
                                      ParallelPidParams& params)
   {
     params.dt = node["dt"].as<T>();
-    params.out_limit_lb = node["out_limit_lb"].as<T>();
-    params.out_limit_ub = node["out_limit_ub"].as<T>();
     params.n_pid = node["n_pid"].as<size_t>();
     params.en_out_limit = node["en_out_limit"].as<bool>();
+    if (params.en_out_limit) {
+      params.out_limit_lb = node["out_limit_lb"].as<T>();
+      params.out_limit_ub = node["out_limit_ub"].as<T>();
+    }
     params.node_params_list.reserve(params.n_pid);
     params.node_params_list.resize(params.n_pid);
 
@@ -265,36 +299,47 @@ struct ParallelPidParams : public ParallelPidBaseParams<T> {
    * parameters are expected to be in the following format:
    *
    * ```yaml
-   * dt: <value>
-   * out_limit_lb: <value>
-   * out_limit_ub: <value>
-   * n_pid: <value>
-   * en_out_limit: <value>
+   * dt: 0
+   * n_pid: 0
+   * en_out_limit: false
+   * # optional, can be deleted if en_out_limit is false
+   * out_limit_lb: 0
+   * out_limit_ub: 0
    *
    * node_params_list:
-   *   - kp: <value>
-   *     ki: <value>
-   *     kd: <value>
-   *     dt: <value>  # not used
+   *   - kp: 0
+   *     ki: 0
+   *     kd: 0
+   *     dt: 0  # not used
+   *     period: 0
    *
-   *     period: <value>
-   *     out_limit_lb: <value>
-   *     out_limit_ub: <value>
-   *     deadband_lb: <value>
-   *     deadband_ub: <value>
-   *     anti_windup_lb: <value>
-   *     anti_windup_ub: <value>
-   *     int_separate_lb: <value>
-   *     int_separate_ub: <value>
-   *     perv_diff_weight: <value>
-   *     td_cutoff_freq: <value>
+   *     en_out_limit: false
+   *     # optional, need to be set if en_out_limit is true
+   *     out_limit_lb: 0
+   *     out_limit_ub: 0
    *
-   *     en_out_limit: <value>
-   *     en_deadband: <value>
-   *     en_trap_int: <value>
-   *     en_anti_windup: <value>
-   *     en_int_separate: <value>
-   *     en_td: <value>
+   *     en_deadband: false
+   *     # optional, need to be set if en_deadband is true
+   *     deadband_lb: 0
+   *     deadband_ub: 0
+   *
+   *     en_trap_int: false
+   *
+   *     en_anti_windup: false
+   *     # optional, need to be set if en_anti_windup is true
+   *     anti_windup_lb: 0
+   *     anti_windup_ub: 0
+   *
+   *     en_int_separate: false
+   *     # optional, need to be set if en_int_separate is true
+   *     int_separate_lb: 0
+   *     int_separate_ub: 0
+   *
+   *     perv_diff_weight: 0
+   *
+   *     en_td: false
+   *     # optional, need to be set if en_td is true
+   *     td_cutoff_freq: 0
    *  - ...
    * ```
    *

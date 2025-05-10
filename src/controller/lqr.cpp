@@ -19,6 +19,7 @@
 #include "robot_utils/controller/lqr.hpp"
 
 #include "robot_utils/core/assert.hpp"
+#include "robot_utils/core/time.hpp"
 /* Private macro -------------------------------------------------------------*/
 
 namespace robot_utils
@@ -47,6 +48,7 @@ bool Lqr<T>::solve(void)
   if (data_.is_converged) {
     return true;
   }
+  T start_time = GetCurrTime<T>();
 
   const auto& A = params_.A;
   const auto A_T = A.transpose();
@@ -58,14 +60,23 @@ bool Lqr<T>::solve(void)
   auto& P = data_.P;
 
   data_.is_converged = false;
-  for (size_t i = 0; i < params_.max_iter; ++i) {
+  size_t i = 0;
+  T cost_time = 0;
+  while (1) {
     K = (R + B_T * P * B).ldlt().solve(B_T * P * A);
     Eigen::MatrixX<T> A_cl = A - B * K;
     Eigen::MatrixX<T> Res = A_T * P * A_cl + Q - P;
 
     data_.res = Res.cwiseAbs().maxCoeff();
+    cost_time = GetCurrTime<T>() - start_time;
     if (data_.res < params_.tol) {
       data_.is_converged = true;
+      break;
+    }
+
+    if ((params_.max_iter > 0 && i >= params_.max_iter) ||
+        (params_.max_cost_time > 0 && cost_time > params_.max_cost_time) ||
+        i >= 1e8) {
       break;
     }
 
@@ -75,7 +86,10 @@ bool Lqr<T>::solve(void)
       DeltaP = A_cl_T * DeltaP * A_cl + Res;
     }
     P += DeltaP;
+    ++i;
   }
+  data_.iter = i;
+  data_.cost_time = cost_time;
 
   return data_.is_converged;
 }
@@ -97,7 +111,8 @@ void Lqr<T>::calc(const StateVec& ref, const StateVec& fdb, InputVec& u) const
 template <typename T>
 void Lqr<T>::setParams(const Params& params)
 {
-  RU_ASSERT(params.max_iter > 0, "max_iter must be greater than 0");
+  RU_ASSERT(params.max_iter > 0 || params.max_cost_time > 0,
+            "max_iter or max_cost_time must be greater than 0");
   RU_ASSERT(params.tol > 0, "tol must be greater than 0");
   RU_ASSERT(params.A.rows() == params_.n && params.A.cols() == params_.n,
             "A must be a square matrix of size (n, n)");
