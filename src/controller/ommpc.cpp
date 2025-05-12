@@ -6,13 +6,14 @@
  *  Version     Date            Author          Note
  *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
  *******************************************************************************
- * @attention :
+ * @attention
+ * This file will only compile when the qpOASES library is found.
  *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
  *******************************************************************************
  */
-
+#ifdef HAS_QPOASES
 /* Includes ------------------------------------------------------------------*/
 #include "robot_utils/controller/ommpc.hpp"
 
@@ -382,3 +383,4 @@ void Ommpc::getJacobian(const StateVec& x_ref, const InputVec& u_ref,
 }
 /* Private function definitions ----------------------------------------------*/
 }  // namespace robot_utils
+#endif  // HAS_QPOASES

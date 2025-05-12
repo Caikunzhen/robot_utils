@@ -11,6 +11,9 @@
  * @details
  * 1. Complete the mpc.hpp
  *******************************************************************************
+ * @attention
+ * This file will only compile when the qpOASES library is found.
+ *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
  *******************************************************************************
@@ -18,6 +21,7 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef ROBOT_UTILS_CONTROLLER_MPC_HPP_
 #define ROBOT_UTILS_CONTROLLER_MPC_HPP_
+#ifdef HAS_QPOASES
 
 /* Includes ------------------------------------------------------------------*/
 #include <yaml-cpp/yaml.h>
@@ -357,5 +361,6 @@ class Mpc
 /* Exported variables --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
 }  // namespace robot_utils
+#endif  // HAS_QPOASES
 
-#endif /* ROBOT_UTILS_CONTROLLER_MPC_HPP_ */
+#endif  /* ROBOT_UTILS_CONTROLLER_MPC_HPP_ */

@@ -11,11 +11,14 @@
  * @details
  * 1. Complete the mpc.cpp
  *******************************************************************************
+ * @attention
+ * This file will only compile when the qpOASES library is found.
+ *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
  *******************************************************************************
  */
-
+#ifdef HAS_QPOASES
 /* Includes ------------------------------------------------------------------*/
 #include "robot_utils/controller/mpc.hpp"
 /* Private macro -------------------------------------------------------------*/
@@ -420,3 +423,4 @@ void Mpc::calcLbAUbA(void)
 }
 /* Private function definitions ----------------------------------------------*/
 }  // namespace robot_utils
+#endif  // HAS_QPOASES

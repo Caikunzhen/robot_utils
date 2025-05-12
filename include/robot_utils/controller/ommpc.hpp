@@ -9,6 +9,9 @@
  * Electronics, vol. 70, no. 9, pp. 9192-9202, Sept. 2023,
  * doi: 10.1109/TIE.2022.3212397.
  *******************************************************************************
+ * @attention
+ * This file will only compile when the qpOASES library is found.
+ *******************************************************************************
  *  Copyright (c) 2025 Caikunzhen, Zhejiang University.
  *  All Rights Reserved.
  *******************************************************************************
@@ -16,6 +19,7 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef ROBOT_UTILS_CONTROLLER_OMMPC_HPP_
 #define ROBOT_UTILS_CONTROLLER_OMMPC_HPP_
+#ifdef HAS_QPOASES
 
 /* Includes ------------------------------------------------------------------*/
 #include <yaml-cpp/yaml.h>
@@ -361,5 +365,6 @@ class Ommpc
 /* Exported function prototypes ----------------------------------------------*/
 
 }  // namespace robot_utils
+#endif  // HAS_QPOASES
 
 #endif /* ROBOT_UTILS_CONTROLLER_OMMPC_HPP_ */
