@@ -40,7 +40,7 @@ target_link_libraries(
   ${PROJECT_NAME}
   PUBLIC
     Eigen3::Eigen
-    yaml-cpp::yaml-cpp
+    yaml-cpp
 )
 
 target_include_directories(
