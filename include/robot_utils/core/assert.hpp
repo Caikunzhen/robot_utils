@@ -31,8 +31,8 @@
 /* Exported macro ------------------------------------------------------------*/
 #if defined(USE_RU_ASSERT) && USE_RU_ASSERT
 #define RU_ASSERT(expr, format, ...) \
-  ((expr)                               \
-       ? (void)0U                       \
+  ((expr)                            \
+       ? (void)0U                    \
        : robot_utils::AssertFailed(__FILE__, __LINE__, format, ##__VA_ARGS__))
 #else
 #define RU_ASSERT(expr, format, ...) ((void)0U)
@@ -45,7 +45,8 @@ namespace robot_utils
 /* Exported variables --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
 
-static void AssertFailed(const char* file, int line, const char* format, ...)
+__attribute__((unused)) static void AssertFailed(const char* file, int line,
+                                                 const char* format, ...)
 {
   va_list args;
   va_start(args, format);

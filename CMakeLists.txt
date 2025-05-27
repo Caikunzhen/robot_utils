@@ -56,6 +56,13 @@ target_compile_definitions(
     USE_RU_ASSERT=${USE_RU_ASSERT}
 )
 
+target_compile_options(
+  ${PROJECT_NAME}
+  PUBLIC
+    -Wno-sign-compare
+    -Wno-reorder
+)
+
 if (qpOASES_FOUND)
   target_link_libraries(
     ${PROJECT_NAME}
