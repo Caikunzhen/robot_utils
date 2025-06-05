@@ -283,7 +283,6 @@ void Ommpc::setParams(const Params& params)
   real_t dt = params_.dt;
   bool input_bound = params_.input_bound;
   params_ = params;
-  params_.dt = dt;
   params_.n = n;
   params_.m = m;
   params_.horizon = horizon;
@@ -353,17 +352,25 @@ void Ommpc::getPrimManifoldSpecificJacobian(
       G_x = G_f = Eigen::MatrixX<real_t>::Identity(prim_m.dim(), prim_m.dim());
       break;
     case ManifoldType::kSpecialOrthogonalGroup3: {
-      ManifoldBase<real_t>::HomeSpace tmp = params_.dt * delta;
+      Eigen::Vector3<real_t> tmp = params_.dt * delta.head<3>();
       Eigen::AngleAxis<real_t> angle_axis;
       angle_axis.angle() = tmp.norm();
-      angle_axis.axis() = -tmp / angle_axis.angle();
-      G_x = angle_axis.toRotationMatrix();
-      Eigen::Matrix3<real_t> skew_tmp_norm = Vec2Skew(angle_axis.axis());
-      real_t coef1 = (1 - cos(angle_axis.angle())) / angle_axis.angle();
-      real_t coef2 = 1 - sin(angle_axis.angle()) / angle_axis.angle();
-      G_f = (Eigen::Matrix3<real_t>::Identity() + coef1 * skew_tmp_norm +
-             coef2 * skew_tmp_norm * skew_tmp_norm)
+      Eigen::Matrix3<real_t> I = Eigen::Matrix3<real_t>::Identity();
+      if (angle_axis.angle() < kEpsilon) {
+        Eigen::Matrix3<real_t> skew_tmp = Vec2Skew(tmp);
+        Eigen::Matrix3<real_t> skew_tmp2 = skew_tmp * skew_tmp;
+        G_x = I + skew_tmp + skew_tmp2 / 2;
+        G_f = I - skew_tmp / 2 + skew_tmp2 / 6;
+      } else {
+        angle_axis.axis() = -tmp.normalized();
+        G_x = angle_axis.toRotationMatrix();
+        Eigen::Matrix3<real_t> skew_tmp_norm = Vec2Skew(tmp.normalized());
+        real_t coef1 = (1 - cos(angle_axis.angle())) / angle_axis.angle();
+        real_t coef2 = 1 - sin(angle_axis.angle()) / angle_axis.angle();
+        G_f =
+            (I + coef1 * skew_tmp_norm + coef2 * skew_tmp_norm * skew_tmp_norm)
                 .transpose();
+      }
     } break;
     default:
       RU_ASSERT(false, "Unsupported manifold type");

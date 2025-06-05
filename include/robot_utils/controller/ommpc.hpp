@@ -207,7 +207,7 @@ class Ommpc
    * successfully, and false otherwise.
    *
    * @param[in] x_ref_seq: Sequence of reference state vector,
-   * \f$\mathrm{x}_{1:N}^d = \left[\mathrm{x}_1^d, \mathrm{x}_2^d, \ldots,
+   * \f$\mathrm{x}_{0:N}^d = \left[\mathrm{x}_0^d, \mathrm{x}_1^d, \ldots,
    * \mathrm{x}_N^d\right], \mathrm{x}_i^d \in \mathcal{M}\f$, demension \f$n\f$
    * @param[in] u_ref_seq: Sequence of reference input vector, \f$u_{0:N-1}^d =
    * \left[u_0^d, u_1^d, \ldots, u_{N-1}^d\right], u_i^d \in \mathbb{R}^m\f$
@@ -317,6 +317,9 @@ class Ommpc
 
   void getJacobian(const StateVec& x_ref, const InputVec& u_ref,
                    Eigen::MatrixX<real_t>& F_x, Eigen::MatrixX<real_t>& F_u);
+
+  static constexpr real_t kEpsilon =
+      std::is_same_v<real_t, float> ? 1e-4f : 1e-8;
 
   Params params_;
   Data data_;

@@ -36,6 +36,7 @@
 
 #include "robot_utils/core/assert.hpp"
 #include "robot_utils/core/periodic_data.hpp"
+#include "robot_utils/geometry/core.hpp"
 /* Exported macro ------------------------------------------------------------*/
 
 namespace robot_utils
@@ -212,7 +213,7 @@ class EuclideanSpaceX : public ManifoldBase<T>
    * \mathbb{R}^n\f$
    */
   explicit EuclideanSpaceX(const Data& m)
-      : ManifoldBase<T>(ManifoldType::kEuclideanSpaceX), dim_(m.size()), m_(m)
+      : ManifoldBase<T>(ManifoldType::kEuclideanSpaceX), m_(m), dim_(m.size())
   {
     RU_ASSERT(m.size() > 0, "EuclideanSpaceX dimension must be greater than 0");
   }
@@ -540,10 +541,17 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
 
     SpecialOrthogonalGroup3<T>& y_t = (SpecialOrthogonalGroup3<T>&)y;
 
-    Eigen::AngleAxis<T> angle_axis;
-    angle_axis.angle() = phi.norm();
-    angle_axis.axis() = phi / angle_axis.angle();
-    y_t.m_ = m_ * angle_axis.toRotationMatrix();
+    Eigen::Matrix3<T> dR;
+    if (phi.norm() < kEpsilon) {
+      Eigen::Matrix3<T> skew_phi = Vec2Skew<T>({phi(0), phi(1), phi(2)});
+      dR = Eigen::Matrix3<T>::Identity() + skew_phi + skew_phi * skew_phi / 2;
+    } else {
+      Eigen::AngleAxis<T> angle_axis;
+      angle_axis.angle() = phi.norm();
+      angle_axis.axis() = phi.normalized();
+      dR = angle_axis.toRotationMatrix();
+    }
+    y_t.m_ = m_ * dR;
   }
 
   /**
@@ -563,10 +571,19 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
         "SpecialOrthogonalGroup3 dimension mismatch, expected %zu, got %zu", 3,
         delta.size());
 
-    Eigen::AngleAxis<T> angle_axis;
-    angle_axis.angle() = delta.norm();
-    angle_axis.axis() = delta / angle_axis.angle();
-    return SpecialOrthogonalGroup3(m_ * angle_axis.toRotationMatrix());
+    Eigen::Matrix3<T> dR;
+    if (delta.norm() < kEpsilon) {
+      Eigen::Matrix3<T> skew_delta =
+          Vec2Skew<T>({delta(0), delta(1), delta(2)});
+      dR = Eigen::Matrix3<T>::Identity() + skew_delta +
+           skew_delta * skew_delta / 2;
+    } else {
+      Eigen::AngleAxis<T> angle_axis;
+      angle_axis.angle() = delta.norm();
+      angle_axis.axis() = delta.normalized();
+      dR = angle_axis.toRotationMatrix();
+    }
+    return SpecialOrthogonalGroup3(m_ * dR);
   }
 
   /**
@@ -604,6 +621,8 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
   }
 
  private:
+  static constexpr T kEpsilon = std::is_same_v<T, float> ? 1e-6f : 1e-8;
+
   Data m_;
 };
 
@@ -655,7 +674,7 @@ class Surface2D : public ManifoldBase<T>
    * \f$f(m(0), m(1))\f$)
    */
   Surface2D(const SurfFunc& f, const Data& m)
-      : ManifoldBase<T>(ManifoldType::kSurface2D), f_(f), m_(m)
+      : ManifoldBase<T>(ManifoldType::kSurface2D), m_(m), f_(f)
   {
     m_(2) = f_(m_(0), m_(1));
   }
@@ -823,8 +842,8 @@ class CompoundManifold : public ManifoldBase<T>
    */
   CompoundManifold(const CompoundManifold<T>&& other)
       : ManifoldBase<T>(ManifoldType::kCompoundManifold),
-        dim_(other.dim_),
-        m_(std::move(other.m_))
+        m_(std::move(other.m_)),
+        dim_(other.dim_)
   {
   }
   /**
