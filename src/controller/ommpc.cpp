@@ -1,10 +1,21 @@
 /**
  *******************************************************************************
- * @file      : ommpc.cpp
- * @brief     :
- * @history   :
- *  Version     Date            Author          Note
- *  V0.9.0      yyyy-mm-dd      <author>        1. <note>
+ * @file ommpc.cpp
+ * @brief This file provides the OMMPC class for robot_utils, it is based on the
+ * paper:
+ *
+ * G. Lu, W. Xu and F. Zhang, "On-Manifold Model Predictive Control for
+ * Trajectory Tracking on Robotic Systems," in IEEE Transactions on Industrial
+ * Electronics, vol. 70, no. 9, pp. 9192-9202, Sept. 2023,
+ * doi: 10.1109/TIE.2022.3212397.
+ *
+ * @section history
+ *
+ * @version V1.0.0
+ * @date 2025-06-05
+ * @author Caikunzhen
+ * @details
+ * 1. Complete the ommpc.cpp
  *******************************************************************************
  * @attention
  * This file will only compile when the qpOASES library is found.
