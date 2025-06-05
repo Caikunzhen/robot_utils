@@ -531,8 +531,8 @@ class ParallelPid
    * \f${\rm PidNode}\f$ is a function that calculates the output of the PID
    * node, defined in @ref PidNode::calc
    *
-   * @param[in] ref: Reference value, \f$\vec{x}^d = \left[x_1^d, x_2^d, \dots,
-   * x_n^d\right]^T\f$, size = \f$n\f$
+   * @param[in] ref_vec: Reference value, \f$\vec{x}^d = \left[x_1^d, x_2^d,
+   * \dots, x_n^d\right]^T\f$, size = \f$n\f$
    * @param[in] fdb_vec: Feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
    * x_{n}\right]^T\f$, size = \f$n\f$
    * @return Output value, \f$u\f$
@@ -560,8 +560,8 @@ class ParallelPid
    * \f${\rm PidNode}\f$ is a function that calculates the output of the PID
    * node, defined in @ref PidNode::calc
    *
-   * @param[in] ref: Reference value, \f$\vec{x}^d = \left[x_1^d, x_2^d, \dots,
-   * x_n^d\right]^T\f$, size = \f$n\f$
+   * @param[in] ref_vec: Reference value, \f$\vec{x}^d = \left[x_1^d, x_2^d,
+   * \dots, x_n^d\right]^T\f$, size = \f$n\f$
    * @param[in] fdb_vec: Feedback vector, \f$\vec{x} = \left[x_1, x_2, \dots,
    * x_{n}\right]^T\f$, size = \f$n\f$
    * @param[in] ffd: Feedforward value, \f$u^{ff}\f$

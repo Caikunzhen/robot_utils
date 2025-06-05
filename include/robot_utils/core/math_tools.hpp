@@ -134,7 +134,7 @@ inline T Deadband(const T& lb, const T& ub, const T& val)
  * @tparam T Type of the value
  * @param[in] lb: Lower bound of the deadband
  * @param[in] ub: Upper bound of the deadband
- * @param[in|out] val: Value to check and modify, it will be set to 0 if it is
+ * @param[in,out] val: Value to check and modify, it will be set to 0 if it is
  * in the deadband [lb, ub]
  */
 template <typename T>
