@@ -204,6 +204,10 @@ class PolyTraj
     polys_ = polys;
     dts_ = dts;
     is_time_scale_ = is_time_scale;
+    tf_ = t0_;
+    for (const auto& dt : dts_) {
+      tf_ += dt;
+    }
   }
   /**
    * @brief Set the polynomial trajectory
@@ -227,12 +231,17 @@ class PolyTraj
     }
     dts_ = dts;
     is_time_scale_ = is_time_scale;
+    tf_ = t0_;
+    for (const auto& dt : dts_) {
+      tf_ += dt;
+    }
   }
 
   size_t getDim(void) const { return dim_; }
   const Polys& getPolys(void) const { return polys_; }
   const std::vector<T>& getDts(void) const { return dts_; }
   T getStartTime(void) { return t0_; }
+  T getEndTime(void) const { return tf_; }
 
  private:
   void getPolyIdxAndDt(const T& t, size_t& idx, T& dt) const;
@@ -246,6 +255,7 @@ class PolyTraj
    */
   std::vector<T> dts_;
   T t0_ = 0;  ///< start time, \f$t_0\f$
+  T tf_ = 0;  ///< end time, \f$t_M\f$
   bool is_time_scale_ = true;
 };
 
@@ -406,8 +416,8 @@ struct PolyTrajOptWithTimeOptParams {
   double ftol_rel = 0;
   /// absolute tolerance for function value, 0 means no tolerance
   double ftol_abs = 0;
-  double maxeval = 0;      ///< maximum number of evaluations, 0 means no limit
-  double maxtime = 0;      ///< maximum time, 0 means no limit
+  double maxeval = 0;  ///< maximum number of evaluations, 0 means no limit
+  double maxtime = 0;  ///< maximum time, 0 means no limit
 
   /**
    * @brief weight for the time optimization, this is used to ensure that the
@@ -534,7 +544,7 @@ class PolyTrajOptWithTimeOpt : public PolyTrajOpt<double, Dim, EnergyOrder>
    * @param[in] xi Waypoints, \f$\left[x_1, x_2, \ldots, x_{M-1}\right], x_i \in
    * \mathbb{R}^d\f$
    * @param[in] t0 Start time, \f$t_0\f$
-   * @param[in|out] dts Time intervals, \f$\left[\Delta t_0, \Delta t_1, \ldots,
+   * @param[in,out] dts Time intervals, \f$\left[\Delta t_0, \Delta t_1, \ldots,
    * \Delta t_{M-1}\right]\f$, input is the initial guess for the time
    * intervals, output is the optimized time intervals
    * @param[out] traj Polynomial trajectory, \f$P\left(t\right)\f$
@@ -637,6 +647,54 @@ using PolyTrajMinSnapWithTimeOpt3 = PolyTrajOptWithTimeOpt<3, 4>;
 #endif  // HAS_NLOPT
 /* Exported variables --------------------------------------------------------*/
 /* Exported function prototypes ----------------------------------------------*/
+
+/**
+ * @brief Generate a polynomial trajectory segment with uniform acceleration
+ *
+ * Problem formulation:
+ *
+ * \f[
+ * \underset{P}{\min} J = t_f - t_0
+ * \f]
+ *
+ * s.t.
+ *
+ * \f[
+ * P\left(t_0\right) = x_0
+ * \f]
+ *
+ * \f[
+ * P^{'}\left(t_0\right) = v_0
+ * \f]
+ *
+ * \f[
+ * P\left(t_f\right) = x_f
+ * \f]
+ *
+ * \f[
+ * P^{'}\left(t_f\right) = 0
+ * \f]
+ *
+ * \f[
+ * P^{'}\left(t\right) \in \left[-v_m, v_m\right]
+ * \f]
+ *
+ * \f[
+ * P^{''}\left(t\right) \in \left[-a_m, a_m\right]
+ * \f]
+ *
+ * @tparam T data type, only float and double are supported
+ * @param[in] max_vel Maximum velocity, \f$v_m\f$
+ * @param[in] max_acc Maximum acceleration, \f$a_m\f$
+ * @param[in] t0 Start time, \f$t_0\f$
+ * @param[in] x0 Start position, \f$[x_0, v_0]^T\f$, where \f$x_0\f$ is the
+ * start position and \f$v_0\f$ is the start velocity
+ * @param[in] xf End position, \f$x_f\f$, the end velocity is 0
+ * @param[out] traj Output polynomial trajectory segment, \f$P\left(t\right)\f$
+ */
+template <typename T>
+void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Eigen::Vector2<T>& x0,
+                       T xf, PolyTraj<T>& traj);
 }  // namespace robot_utils
 
 #endif /* ROBOT_UTILS_INTERPOLATION_POLY_TRAJ_HPP_ */

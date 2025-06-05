@@ -17,6 +17,8 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "robot_utils/interpolation/poly_traj.hpp"
+
+#include "robot_utils/core/math_tools.hpp"
 /* Private macro -------------------------------------------------------------*/
 
 namespace robot_utils
@@ -766,6 +768,76 @@ double PolyTrajOptWithTimeOpt<Dim, EnergyOrder>::objectiveFunc(
 }
 #endif  // HAS_NLOPT
 
+template <typename T>
+void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Eigen::Vector2<T>& x0,
+                       T xf, PolyTraj<T>& traj)
+{
+  RU_ASSERT(max_vel > 0, "Max velocity must be greater than 0");
+  RU_ASSERT(max_acc > 0, "Max acceleration must be greater than 0");
+
+  T _x0 = x0(0);
+  T _v0 = std::clamp(x0(1), -max_vel, max_vel);
+  T dir = GetSign(xf - _x0);
+  const T dist_thresh = (2 * max_vel * max_vel - _v0 * _v0) / (2 * max_acc);
+
+  if (abs(xf - _x0) <= dist_thresh) {
+    // Triangular segment
+    std::vector<Eigen::MatrixX<T>> coeffs;
+    std::vector<T> dts;
+    T v1 = dir * sqrt(max_acc * abs(xf - _x0) + _v0 * _v0 / 2);
+    while (abs(v1) < dir * _v0) {
+      T _v0_new = -GetSign(_v0) * sqrt(max_acc * abs(xf - _x0) + _v0 * _v0 / 2);
+      T dt = abs(_v0_new - _v0) / max_acc;
+      Eigen::MatrixX<T> coeff(1, 3);
+      coeff(0, 0) = _x0;
+      coeff(0, 1) = _v0;
+      coeff(0, 2) = -dir * max_acc / 2;
+      coeffs.push_back(coeff);
+      dts.push_back(dt);
+      _x0 += (_v0 + _v0_new) * dt / 2;
+      _v0 = _v0_new;
+      dir = GetSign(xf - _x0);
+      v1 = dir * sqrt(max_acc * abs(xf - _x0) + _v0 * _v0 / 2);
+    }
+    T t1 = abs(v1 - _v0) / max_acc;
+    T x1 = (_v0 + v1) * t1 / 2 + _x0;
+    T t2 = abs(v1) / max_acc;
+    Eigen::MatrixX<T> coeff1(1, 3);
+    coeff1(0, 0) = _x0;
+    coeff1(0, 1) = _v0;
+    coeff1(0, 2) = dir * max_acc / 2;
+    coeffs.push_back(coeff1);
+    dts.push_back(t1);
+    Eigen::MatrixX<T> coeff2(1, 3);
+    coeff2(0, 0) = x1;
+    coeff2(0, 1) = v1;
+    coeff2(0, 2) = -coeff1(0, 2);
+    coeffs.push_back(coeff2);
+    dts.push_back(t2);
+    traj.setTraj(t0, coeffs, dts, false);
+  } else {
+    // Trapezoidal segment
+    T v1 = dir * max_vel;
+    T t1 = abs(v1 - _v0) / max_acc;
+    T x1 = (_v0 + v1) * t1 / 2 + _x0;
+    T t2 = (abs(xf - _x0) - dist_thresh) / max_vel;
+    T x2 = x1 + v1 * t2;
+    T t3 = max_vel / max_acc;
+    Eigen::MatrixX<T> coeff1(1, 3);
+    coeff1(0, 0) = _x0;
+    coeff1(0, 1) = _v0;
+    coeff1(0, 2) = dir * max_acc / 2;
+    Eigen::MatrixX<T> coeff2(1, 2);
+    coeff2(0, 0) = x1;
+    coeff2(0, 1) = v1;
+    Eigen::MatrixX<T> coeff3(1, 3);
+    coeff3(0, 0) = x2;
+    coeff3(0, 1) = v1;
+    coeff3(0, 2) = -coeff1(0, 2);
+    traj.setTraj(t0, {coeff1, coeff2, coeff3}, {t1, t2, t3}, false);
+  }
+}
+
 template class Poly<float>;
 template class Poly<double>;
 template class PolyTraj<float>;
@@ -801,6 +873,13 @@ template class PolyTrajOptWithTimeOpt<1, 4>;
 template class PolyTrajOptWithTimeOpt<2, 4>;
 template class PolyTrajOptWithTimeOpt<3, 4>;
 #endif  // HAS_NLOPT
+
+template void PolyTrajSegUniAcc<float>(float max_vel, float max_acc, float t0,
+                                       const Eigen::Vector2f& x0, float xf,
+                                       PolyTraj<float>& traj);
+template void PolyTrajSegUniAcc<double>(double max_vel, double max_acc,
+                                        double t0, const Eigen::Vector2d& x0,
+                                        double xf, PolyTraj<double>& traj);
 /* Private function definitions ----------------------------------------------*/
 
 template <typename T>
