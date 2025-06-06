@@ -18,6 +18,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "robot_utils/interpolation/poly_traj.hpp"
 
+#include <cmath>
+
 #include "robot_utils/core/math_tools.hpp"
 /* Private macro -------------------------------------------------------------*/
 
@@ -202,7 +204,7 @@ void PolyTrajOpt<T, Dim, EnergyOrder>::simpleTimeAllocate(
     // Acceleration and deceleration distance
     T d_acc = max_vel * max_vel / max_acc;
     if (dist < d_acc) {
-      dts[i] = sqrt(dist / max_acc);
+      dts[i] = std::sqrt(dist / max_acc);
     } else {
       T d_vel = dist - d_acc;
       T t_acc = 2 * max_vel / max_acc;
@@ -751,7 +753,7 @@ double PolyTrajOptWithTimeOpt<Dim, EnergyOrder>::objectiveFunc(
     traj_opt->optimize(x0, xf, xi, t0, x, traj, &J);
   }
 
-  const double viola_t = abs(t_total - t_total_);
+  const double viola_t = std::abs(t_total - t_total_);
   double viola_t_pena = 0;
   double dvoila_t_pena = 0;
   if (SmoothedL1(PolyTrajOptWithTimeOpt::kSmoothMu, viola_t, viola_t_pena,
@@ -780,14 +782,15 @@ void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Eigen::Vector2<T>& x0,
   T dir = GetSign(xf - _x0);
   const T dist_thresh = (2 * max_vel * max_vel - _v0 * _v0) / (2 * max_acc);
 
-  if (abs(xf - _x0) <= dist_thresh) {
+  if (std::abs(xf - _x0) <= dist_thresh) {
     // Triangular segment
     std::vector<Eigen::MatrixX<T>> coeffs;
     std::vector<T> dts;
-    T v1 = dir * sqrt(max_acc * abs(xf - _x0) + _v0 * _v0 / 2);
-    while (abs(v1) < dir * _v0) {
-      T _v0_new = -GetSign(_v0) * sqrt(max_acc * abs(xf - _x0) + _v0 * _v0 / 2);
-      T dt = abs(_v0_new - _v0) / max_acc;
+    T v1 = dir * std::sqrt(max_acc * std::abs(xf - _x0) + _v0 * _v0 / 2);
+    while (std::abs(v1) < dir * _v0) {
+      T _v0_new = -GetSign(_v0) *
+                  std::sqrt(max_acc * std::abs(xf - _x0) + _v0 * _v0 / 2);
+      T dt = std::abs(_v0_new - _v0) / max_acc;
       Eigen::MatrixX<T> coeff(1, 3);
       coeff(0, 0) = _x0;
       coeff(0, 1) = _v0;
@@ -797,11 +800,11 @@ void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Eigen::Vector2<T>& x0,
       _x0 += (_v0 + _v0_new) * dt / 2;
       _v0 = _v0_new;
       dir = GetSign(xf - _x0);
-      v1 = dir * sqrt(max_acc * abs(xf - _x0) + _v0 * _v0 / 2);
+      v1 = dir * std::sqrt(max_acc * std::abs(xf - _x0) + _v0 * _v0 / 2);
     }
-    T t1 = abs(v1 - _v0) / max_acc;
+    T t1 = std::abs(v1 - _v0) / max_acc;
     T x1 = (_v0 + v1) * t1 / 2 + _x0;
-    T t2 = abs(v1) / max_acc;
+    T t2 = std::abs(v1) / max_acc;
     Eigen::MatrixX<T> coeff1(1, 3);
     coeff1(0, 0) = _x0;
     coeff1(0, 1) = _v0;
@@ -818,9 +821,9 @@ void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Eigen::Vector2<T>& x0,
   } else {
     // Trapezoidal segment
     T v1 = dir * max_vel;
-    T t1 = abs(v1 - _v0) / max_acc;
+    T t1 = std::abs(v1 - _v0) / max_acc;
     T x1 = (_v0 + v1) * t1 / 2 + _x0;
-    T t2 = (abs(xf - _x0) - dist_thresh) / max_vel;
+    T t2 = (std::abs(xf - _x0) - dist_thresh) / max_vel;
     T x2 = x1 + v1 * t2;
     T t3 = max_vel / max_acc;
     Eigen::MatrixX<T> coeff1(1, 3);

@@ -22,6 +22,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
+#include <cmath>
 #include <type_traits>
 
 #include "robot_utils/core/math_tools.hpp"
@@ -100,17 +101,17 @@ template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void RotMat2EulerAngle(const Eigen::Matrix3<T>& R,
                               Eigen::Vector3<T>& euler)
 {
-  euler.y() = -asin(R(2, 0));
-  if (abs(R(2, 0) < T(0.9999999))) {  // not gimbal lock
-    T sign = GetSign(cos(euler.y()));
-    euler.x() = atan2(R(2, 1) * sign, R(2, 2) * sign);
-    euler.z() = atan2(R(1, 0) * sign, R(0, 0) * sign);
+  euler.y() = -std::asin(R(2, 0));
+  if (std::abs(R(2, 0) < T(0.9999999))) {  // not gimbal lock
+    T sign = GetSign(std::cos(euler.y()));
+    euler.x() = std::atan2(R(2, 1) * sign, R(2, 2) * sign);
+    euler.z() = std::atan2(R(1, 0) * sign, R(0, 0) * sign);
   } else {
     euler.x() = 0;
     if (R(2, 0) > 0) {
-      euler.z() = atan2(-R(0, 1), -R(0, 2));
+      euler.z() = std::atan2(-R(0, 1), -R(0, 2));
     } else {
-      euler.z() = -atan2(R(0, 1), R(0, 2));
+      euler.z() = -std::atan2(R(0, 1), R(0, 2));
     }
   }
 }
@@ -310,18 +311,18 @@ inline void Quat2EulerAngle(const Eigen::Quaternion<T>& q,
                             Eigen::Vector3<T>& euler)
 {
   Eigen::Quaternion<T> qn = q.normalized();
-  euler.x() = atan2(qn.w() * qn.x() + qn.y() * qn.z(),
-                    T(0.5) - qn.x() * qn.x() - qn.y() * qn.y());
+  euler.x() = std::atan2(qn.w() * qn.x() + qn.y() * qn.z(),
+                         T(0.5) - qn.x() * qn.x() - qn.y() * qn.y());
 
   T sinp = 2 * (qn.w() * qn.y() - qn.z() * qn.x());
-  if (abs(sinp) >= 1) {  // gimbal lock
-    euler.y() = copysign(M_PI_2, sinp);
+  if (std::abs(sinp) >= 1) {  // gimbal lock
+    euler.y() = std::copysign(M_PI_2, sinp);
   } else {
-    euler.y() = asin(sinp);
+    euler.y() = std::asin(sinp);
   }
 
-  euler.z() = atan2(qn.w() * qn.z() + qn.x() * qn.y(),
-                    T(0.5) - qn.y() * qn.y() - qn.z() * qn.z());
+  euler.z() = std::atan2(qn.w() * qn.z() + qn.x() * qn.y(),
+                         T(0.5) - qn.y() * qn.y() - qn.z() * qn.z());
 }
 
 /**

@@ -28,6 +28,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -378,7 +379,7 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
 
     Eigen::Matrix2<T> m_delta = m_.transpose() * y_t.m_;
     HomeSpace delta(1);
-    delta(0) = atan2(m_delta(1, 0), m_delta(0, 0));
+    delta(0) = std::atan2(m_delta(1, 0), m_delta(0, 0));
     return delta;
   }
 
@@ -396,7 +397,8 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
     SpecialOrthogonalGroup2<T>& y_t = (SpecialOrthogonalGroup2<T>&)y;
 
     Eigen::Matrix2<T> m_delta;
-    m_delta << cos(phi(0)), -sin(phi(0)), sin(phi(0)), cos(phi(0));
+    m_delta << std::cos(phi(0)), -std::sin(phi(0)), std::sin(phi(0)),
+        std::cos(phi(0));
     y_t.m_ = m_ * m_delta;
   }
 
@@ -418,7 +420,8 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
         delta.size());
 
     Eigen::Matrix2<T> m_delta;
-    m_delta << cos(delta(0)), -sin(delta(0)), sin(delta(0)), cos(delta(0));
+    m_delta << std::cos(delta(0)), -std::sin(delta(0)), std::sin(delta(0)),
+        std::cos(delta(0));
     return SpecialOrthogonalGroup2(m_ * m_delta);
   }
 
@@ -440,7 +443,7 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
 
     Eigen::Matrix2<T> m_delta = x.m_.transpose() * m_;
     HomeSpace delta(1);
-    delta(0) = atan2(m_delta(1, 0), m_delta(0, 0));
+    delta(0) = std::atan2(m_delta(1, 0), m_delta(0, 0));
     return delta;
   }
 

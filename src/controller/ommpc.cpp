@@ -376,8 +376,8 @@ void Ommpc::getPrimManifoldSpecificJacobian(
         angle_axis.axis() = -tmp.normalized();
         G_x = angle_axis.toRotationMatrix();
         Eigen::Matrix3<real_t> skew_tmp_norm = Vec2Skew(tmp.normalized());
-        real_t coef1 = (1 - cos(angle_axis.angle())) / angle_axis.angle();
-        real_t coef2 = 1 - sin(angle_axis.angle()) / angle_axis.angle();
+        real_t coef1 = (1 - std::cos(angle_axis.angle())) / angle_axis.angle();
+        real_t coef2 = 1 - std::sin(angle_axis.angle()) / angle_axis.angle();
         G_f =
             (I + coef1 * skew_tmp_norm + coef2 * skew_tmp_norm * skew_tmp_norm)
                 .transpose();
