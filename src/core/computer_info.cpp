@@ -140,7 +140,8 @@ void CpuInfo::updateTemp(void)
       type_file >> type;
       type_file.close();
       if (type == "x86_pkg_temp" || type == "cpu-thermal" || type == "TCPU" ||
-          type.find("cpu") != std::string::npos) {
+          type.find("cpu") != std::string::npos ||
+          type.find("CPU") != std::string::npos) {
         std::ifstream temp_file(entry.path() / "temp");
         if (!temp_file.is_open()) {
           continue;
