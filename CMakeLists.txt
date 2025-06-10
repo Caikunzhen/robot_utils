@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(robot_utils)
 
-add_compile_options(-std=c++2a)
-
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -16,8 +14,12 @@ elseif (${CMAKE_BUILD_TYPE} STREQUAL "Release")
     set(USE_RU_ASSERT 0)
   endif()
 endif()
-add_definitions(-DUSE_RU_ASSERT=${USE_RU_ASSERT})
 
+if (USE_RU_ASSERT)
+  message(STATUS "Using robot_utils assert")
+else()
+  message(STATUS "Not using robot_utils assert")
+endif()
 
 find_package(Eigen3 REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -47,7 +49,6 @@ target_include_directories(
   ${PROJECT_NAME}
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${EIGEN3_INCLUDE_DIR}
 )
 
 target_compile_definitions(
@@ -63,7 +64,14 @@ target_compile_options(
     -Wno-reorder
 )
 
+target_compile_features(
+  ${PROJECT_NAME}
+  PUBLIC
+    cxx_std_20
+)
+
 if (qpOASES_FOUND)
+  message(STATUS "qpOASES found, enabling qpOASES support")
   target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
@@ -77,6 +85,7 @@ if (qpOASES_FOUND)
 endif()
 
 if (NLopt_FOUND)
+  message(STATUS "NLopt found, enabling NLopt support")
   target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC

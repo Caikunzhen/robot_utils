@@ -726,6 +726,11 @@ void PolyTrajOptWithTimeOpt<Dim, EnergyOrder>::optimizeWithTimeOpt(
 }
 
 template <size_t Dim, size_t EnergyOrder>
+PolyTrajOptWithTimeOpt<Dim, EnergyOrder>::~PolyTrajOptWithTimeOpt(void)
+{
+}
+
+template <size_t Dim, size_t EnergyOrder>
 double PolyTrajOptWithTimeOpt<Dim, EnergyOrder>::objectiveFunc(
     const std::vector<double>& x, std::vector<double>& grad, void* data)
 {

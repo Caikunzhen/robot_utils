@@ -535,7 +535,7 @@ class PolyTrajOptWithTimeOpt : public PolyTrajOpt<double, Dim, EnergyOrder>
       std::shared_ptr<const PolyTrajOptWithTimeOpt<Dim, EnergyOrder>>;
 
   PolyTrajOptWithTimeOpt(const Params& params) : params_(params) {}
-  ~PolyTrajOptWithTimeOpt(void) = default;
+  ~PolyTrajOptWithTimeOpt(void);
 
   /**
    * @brief Optimize the polynomial trajectory with time optimization
