@@ -199,7 +199,7 @@ class Mpc
   };
 
   explicit Mpc(const Params& params);
-  virtual ~Mpc(void) = default;
+  virtual ~Mpc(void);
 
   /**
    * @brief Solve the MPC problem

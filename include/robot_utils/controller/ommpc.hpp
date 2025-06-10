@@ -204,7 +204,7 @@ class Ommpc
   };
 
   explicit Ommpc(const Params& params);
-  virtual ~Ommpc(void) = default;
+  virtual ~Ommpc(void);
 
   /**
    * @brief Solve the OMMPC problem

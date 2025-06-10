@@ -135,6 +135,8 @@ Ommpc::Ommpc(const Params& params)
   qp_.setOptions(op);
 }
 
+Ommpc::~Ommpc() {}
+
 bool Ommpc::solve(const StateSeq& x_ref_seq, const CtrlSeq& u_ref_seq,
                   const StateVec& x0)
 {

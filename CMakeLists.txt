@@ -74,7 +74,7 @@ if (qpOASES_FOUND)
   message(STATUS "qpOASES found, enabling qpOASES support")
   target_link_libraries(
     ${PROJECT_NAME}
-    PUBLIC
+    PRIVATE
       qpOASES
   )
   target_compile_definitions(
@@ -88,7 +88,7 @@ if (NLopt_FOUND)
   message(STATUS "NLopt found, enabling NLopt support")
   target_link_libraries(
     ${PROJECT_NAME}
-    PUBLIC
+    PRIVATE
       NLopt::nlopt
   )
   target_compile_definitions(

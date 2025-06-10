@@ -172,6 +172,8 @@ Mpc::Mpc(const Params& params)
   qp_.setOptions(op);
 }
 
+Mpc::~Mpc(void) {}
+
 bool Mpc::solve(const StateSeq& x_ref_seq, const StateVec& x0, bool force_init)
 {
   RU_ASSERT(x_ref_seq.size() == params_.horizon,
