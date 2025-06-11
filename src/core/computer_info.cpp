@@ -39,34 +39,6 @@ void CpuInfo::update(void)
   updateTemp();
 }
 
-CpuInfo::CpuInfo(void)
-{
-  // Load CPU information from /proc/cpuinfo
-  std::ifstream cpuinfo_file("/proc/cpuinfo");
-  if (!cpuinfo_file.is_open()) {
-    throw std::runtime_error("Failed to open /proc/cpuinfo");
-  }
-
-  std::string line;
-  while (std::getline(cpuinfo_file, line)) {
-    if (line.find("processor") == 0) {
-      ProcInfo proc_info;
-      proc_info.idx = std::stoul(line.substr(line.find(':') + 1));
-      proc_infos_.push_back(proc_info);
-    } else if (line.find("model name") == 0) {
-      proc_infos_.back().model = line.substr(line.find(':') + 2);
-    } else if (line.find("cpu MHz") == 0) {
-      proc_infos_.back().freq = std::stod(line.substr(line.find(':') + 1));
-    } else if (line.find("core id") == 0) {
-      proc_infos_.back().core_id = std::stoul(line.substr(line.find(':') + 1));
-    }
-  }
-
-  cpuinfo_file.close();
-
-  update();
-}
-
 void CpuInfo::updateDynInfo(void)
 {
   // Load dynamic CPU information from /proc/stat
@@ -122,6 +94,27 @@ void CpuInfo::updateDynInfo(void)
   }
 
   stat_file.close();
+
+  // Load CPU frequency from
+  // /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq
+  proc_dyn_infos_[0].freq = 0.0;
+  for (size_t i = 1; i < proc_dyn_infos_.size(); ++i) {
+    const std::string freq_path = "/sys/devices/system/cpu/" +
+                                  proc_dyn_infos_[i].name +
+                                  "/cpufreq/scaling_cur_freq";
+    std::ifstream freq_file(freq_path);
+    if (freq_file.is_open()) {
+      double freq;
+      freq_file >> freq;
+      freq_file.close();
+      proc_dyn_infos_[i].freq = freq / 1000.0;  // Convert from kHz to MHz
+    } else {
+      proc_dyn_infos_[i].freq = 0.0;  // Set frequency to 0 if not available
+    }
+    proc_dyn_infos_[0].freq += proc_dyn_infos_[i].freq;
+  }
+  proc_dyn_infos_[0].freq /= (proc_dyn_infos_.size() - 1);  // Average frequency
+
   is_first_update_ = false;
 }
 

@@ -48,13 +48,7 @@ class CpuInfo
     uint64_t guest = 0;    ///< guest time
     uint64_t guest_nice = 0;  ///< guest nice time
     double usage = 0.0;       ///< CPU usage percentage, [0, 1]
-  };
-
-  struct ProcInfo {
-    size_t idx = 0;      ///< index of processor
-    std::string model;   ///< CPU model name
-    double freq = 0.0;   ///< CPU frequency in MHz
-    size_t core_id = 0;  ///< CPU core ID
+    double freq = 0.0;        ///< CPU frequency in MHz
   };
 
   CpuInfo(const CpuInfo&) = delete;
@@ -69,13 +63,6 @@ class CpuInfo
   void update(void);
 
   /**
-   * @brief Get information of all CPU cores
-   * @return A vector of ProcInfo containing information of all CPU cores,
-   * [cpu, cpu0, cpu1, ...]
-   */
-  const std::vector<ProcInfo>& getProcInfos(void) const { return proc_infos_; }
-
-  /**
    * @brief Get dynamic information of all CPU cores
    * @return A vector of ProcDynInfo containing dynamic information of all CPU
    * cores, [cpu, cpu0, cpu1, ...]
@@ -84,8 +71,6 @@ class CpuInfo
   {
     return proc_dyn_infos_;
   }
-
-  size_t getNumCores(void) const { return proc_infos_.size(); }
 
   /**
    * @brief Get dynamic information of total CPU cores
@@ -113,14 +98,13 @@ class CpuInfo
   }
 
  private:
-  CpuInfo(void);
+  CpuInfo(void) { update(); }
   ~CpuInfo(void) = default;
 
   void updateDynInfo(void);
 
   void updateTemp(void);
 
-  std::vector<ProcInfo> proc_infos_;  ///< information of all CPU cores
   /// dynamic information of all CPU cores
   std::vector<ProcDynInfo> proc_dyn_infos_;
   bool is_first_update_ = true;  ///< flag to indicate first update
