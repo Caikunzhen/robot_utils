@@ -26,6 +26,7 @@
 #include <type_traits>
 
 #include "robot_utils/core/math_tools.hpp"
+#include "robot_utils/core/typedef.hpp"
 /* Exported macro ------------------------------------------------------------*/
 
 namespace robot_utils
@@ -42,7 +43,7 @@ namespace robot_utils
  * @param[out] S: Skew symmetric matrix of v
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline void Vec2Skew(const Eigen::Vector3<T>& v, Eigen::Matrix3<T>& S)
+inline void Vec2Skew(const Vector3<T>& v, Matrix3<T>& S)
 {
   S << 0, -v(2), v(1), v(2), 0, -v(0), -v(1), v(0), 0;
 }
@@ -54,9 +55,9 @@ inline void Vec2Skew(const Eigen::Vector3<T>& v, Eigen::Matrix3<T>& S)
  * @return Skew symmetric matrix of v
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::Matrix3<T> Vec2Skew(const Eigen::Vector3<T>& v)
+inline Matrix3<T> Vec2Skew(const Vector3<T>& v)
 {
-  Eigen::Matrix3<T> S;
+  Matrix3<T> S;
   Vec2Skew(v, S);
   return S;
 }
@@ -68,7 +69,7 @@ inline Eigen::Matrix3<T> Vec2Skew(const Eigen::Vector3<T>& v)
  * @param[out] v: The vector corresponding to S
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline void Skew2Vec(const Eigen::Matrix3<T>& S, Eigen::Vector3<T>& v)
+inline void Skew2Vec(const Matrix3<T>& S, Vector3<T>& v)
 {
   v(0) = S(2, 1);
   v(1) = S(0, 2);
@@ -82,9 +83,9 @@ inline void Skew2Vec(const Eigen::Matrix3<T>& S, Eigen::Vector3<T>& v)
  * @return The vector corresponding to S
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::Vector3<T> Skew2Vec(const Eigen::Matrix3<T>& S)
+inline Vector3<T> Skew2Vec(const Matrix3<T>& S)
 {
-  Eigen::Vector3<T> v;
+  Vector3<T> v;
   Skew2Vec(S, v);
   return v;
 }
@@ -98,8 +99,8 @@ inline Eigen::Vector3<T> Skew2Vec(const Eigen::Matrix3<T>& S)
  * are not unique. This function will return the roll angles as 0.
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline void RotMat2EulerAngle(const Eigen::Matrix3<T>& R,
-                              Eigen::Vector3<T>& euler)
+inline void RotMat2EulerAngle(const Matrix3<T>& R,
+                              Vector3<T>& euler)
 {
   euler.y() = -std::asin(R(2, 0));
   if (std::abs(R(2, 0) < T(0.9999999))) {  // not gimbal lock
@@ -125,9 +126,9 @@ inline void RotMat2EulerAngle(const Eigen::Matrix3<T>& R,
  * are not unique. This function will return the roll angles as 0.
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::Vector3<T> RotMat2EulerAngle(const Eigen::Matrix3<T>& R)
+inline Vector3<T> RotMat2EulerAngle(const Matrix3<T>& R)
 {
-  Eigen::Vector3<T> euler;
+  Vector3<T> euler;
   RotMat2EulerAngle(R, euler);
   return euler;
 }
@@ -139,7 +140,7 @@ inline Eigen::Vector3<T> RotMat2EulerAngle(const Eigen::Matrix3<T>& R)
  * @param[out] q: Quaternion
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline void RotMat2Quat(const Eigen::Matrix3<T>& R, Eigen::Quaternion<T>& q)
+inline void RotMat2Quat(const Matrix3<T>& R, Eigen::Quaternion<T>& q)
 {
   q = Eigen::Quaternion<T>(R);
   q.normalize();
@@ -152,7 +153,7 @@ inline void RotMat2Quat(const Eigen::Matrix3<T>& R, Eigen::Quaternion<T>& q)
  * @return Quaternion
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::Quaternion<T> RotMat2Quat(const Eigen::Matrix3<T>& R)
+inline Eigen::Quaternion<T> RotMat2Quat(const Matrix3<T>& R)
 {
   Eigen::Quaternion<T> q;
   RotMat2Quat(R, q);
@@ -166,7 +167,7 @@ inline Eigen::Quaternion<T> RotMat2Quat(const Eigen::Matrix3<T>& R)
  * @param[out] angle_axis: Angle-axis representation
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline void RotMat2AngleAxis(const Eigen::Matrix3<T>& R,
+inline void RotMat2AngleAxis(const Matrix3<T>& R,
                              Eigen::AngleAxis<T>& angle_axis)
 {
   angle_axis = Eigen::AngleAxis<T>(R);
@@ -179,7 +180,7 @@ inline void RotMat2AngleAxis(const Eigen::Matrix3<T>& R,
  * @return Angle-axis representation
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::AngleAxis<T> RotMat2AngleAxis(const Eigen::Matrix3<T>& R)
+inline Eigen::AngleAxis<T> RotMat2AngleAxis(const Matrix3<T>& R)
 {
   Eigen::AngleAxis<T> angle_axis;
   RotMat2AngleAxis(R, angle_axis);
@@ -193,12 +194,12 @@ inline Eigen::AngleAxis<T> RotMat2AngleAxis(const Eigen::Matrix3<T>& R)
  * @param[out] R: Rotation matrix
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline void EulerAngle2RotMat(const Eigen::Vector3<T>& euler,
-                              Eigen::Matrix3<T>& R)
+inline void EulerAngle2RotMat(const Vector3<T>& euler,
+                              Matrix3<T>& R)
 {
-  R = Eigen::AngleAxis<T>(euler.z(), Eigen::Vector3<T>::UnitZ()) *
-      Eigen::AngleAxis<T>(euler.y(), Eigen::Vector3<T>::UnitY()) *
-      Eigen::AngleAxis<T>(euler.x(), Eigen::Vector3<T>::UnitX());
+  R = Eigen::AngleAxis<T>(euler.z(), Vector3<T>::UnitZ()) *
+      Eigen::AngleAxis<T>(euler.y(), Vector3<T>::UnitY()) *
+      Eigen::AngleAxis<T>(euler.x(), Vector3<T>::UnitX());
 }
 
 /**
@@ -208,9 +209,9 @@ inline void EulerAngle2RotMat(const Eigen::Vector3<T>& euler,
  * @return Rotation matrix
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::Matrix3<T> EulerAngle2RotMat(const Eigen::Vector3<T>& euler)
+inline Matrix3<T> EulerAngle2RotMat(const Vector3<T>& euler)
 {
-  Eigen::Matrix3<T> R;
+  Matrix3<T> R;
   EulerAngle2RotMat(euler, R);
   return R;
 }
@@ -222,12 +223,12 @@ inline Eigen::Matrix3<T> EulerAngle2RotMat(const Eigen::Vector3<T>& euler)
  * @param[out] q: Quaternion
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline void EulerAngle2Quat(const Eigen::Vector3<T>& euler,
+inline void EulerAngle2Quat(const Vector3<T>& euler,
                             Eigen::Quaternion<T>& q)
 {
-  q = Eigen::AngleAxis<T>(euler.z(), Eigen::Vector3<T>::UnitZ()) *
-      Eigen::AngleAxis<T>(euler.y(), Eigen::Vector3<T>::UnitY()) *
-      Eigen::AngleAxis<T>(euler.x(), Eigen::Vector3<T>::UnitX());
+  q = Eigen::AngleAxis<T>(euler.z(), Vector3<T>::UnitZ()) *
+      Eigen::AngleAxis<T>(euler.y(), Vector3<T>::UnitY()) *
+      Eigen::AngleAxis<T>(euler.x(), Vector3<T>::UnitX());
   q.normalize();
 }
 
@@ -238,7 +239,7 @@ inline void EulerAngle2Quat(const Eigen::Vector3<T>& euler,
  * @return Quaternion
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::Quaternion<T> EulerAngle2Quat(const Eigen::Vector3<T>& euler)
+inline Eigen::Quaternion<T> EulerAngle2Quat(const Vector3<T>& euler)
 {
   Eigen::Quaternion<T> q;
   EulerAngle2Quat(euler, q);
@@ -252,12 +253,12 @@ inline Eigen::Quaternion<T> EulerAngle2Quat(const Eigen::Vector3<T>& euler)
  * @param[out] angle_axis: Angle-axis representation
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline void EulerAngle2AngleAxis(const Eigen::Vector3<T>& euler,
+inline void EulerAngle2AngleAxis(const Vector3<T>& euler,
                                  Eigen::AngleAxis<T>& angle_axis)
 {
-  angle_axis = Eigen::AngleAxis<T>(euler.z(), Eigen::Vector3<T>::UnitZ()) *
-               Eigen::AngleAxis<T>(euler.y(), Eigen::Vector3<T>::UnitY()) *
-               Eigen::AngleAxis<T>(euler.x(), Eigen::Vector3<T>::UnitX());
+  angle_axis = Eigen::AngleAxis<T>(euler.z(), Vector3<T>::UnitZ()) *
+               Eigen::AngleAxis<T>(euler.y(), Vector3<T>::UnitY()) *
+               Eigen::AngleAxis<T>(euler.x(), Vector3<T>::UnitX());
 }
 
 /**
@@ -267,7 +268,7 @@ inline void EulerAngle2AngleAxis(const Eigen::Vector3<T>& euler,
  * @return Angle-axis representation
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::AngleAxis<T> EulerAngle2AngleAxis(const Eigen::Vector3<T>& euler)
+inline Eigen::AngleAxis<T> EulerAngle2AngleAxis(const Vector3<T>& euler)
 {
   Eigen::AngleAxis<T> angle_axis;
   EulerAngle2AngleAxis(euler, angle_axis);
@@ -281,7 +282,7 @@ inline Eigen::AngleAxis<T> EulerAngle2AngleAxis(const Eigen::Vector3<T>& euler)
  * @param[out] R: Rotation matrix
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline void Quat2RotMat(const Eigen::Quaternion<T>& q, Eigen::Matrix3<T>& R)
+inline void Quat2RotMat(const Eigen::Quaternion<T>& q, Matrix3<T>& R)
 {
   R = q.normalized().toRotationMatrix();
 }
@@ -293,9 +294,9 @@ inline void Quat2RotMat(const Eigen::Quaternion<T>& q, Eigen::Matrix3<T>& R)
  * @return Rotation matrix
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::Matrix3<T> Quat2RotMat(const Eigen::Quaternion<T>& q)
+inline Matrix3<T> Quat2RotMat(const Eigen::Quaternion<T>& q)
 {
-  Eigen::Matrix3<T> R;
+  Matrix3<T> R;
   Quat2RotMat(q, R);
   return R;
 }
@@ -308,7 +309,7 @@ inline Eigen::Matrix3<T> Quat2RotMat(const Eigen::Quaternion<T>& q)
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void Quat2EulerAngle(const Eigen::Quaternion<T>& q,
-                            Eigen::Vector3<T>& euler)
+                            Vector3<T>& euler)
 {
   Eigen::Quaternion<T> qn = q.normalized();
   euler.x() = std::atan2(qn.w() * qn.x() + qn.y() * qn.z(),
@@ -332,9 +333,9 @@ inline void Quat2EulerAngle(const Eigen::Quaternion<T>& q,
  * @return Euler angles(ZYX) in radians, [roll, pitch, yaw]
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::Vector3<T> Quat2EulerAngle(const Eigen::Quaternion<T>& q)
+inline Vector3<T> Quat2EulerAngle(const Eigen::Quaternion<T>& q)
 {
-  Eigen::Vector3<T> euler;
+  Vector3<T> euler;
   Quat2EulerAngle(q, euler);
   return euler;
 }
@@ -374,7 +375,7 @@ inline Eigen::AngleAxis<T> Quat2AngleAxis(const Eigen::Quaternion<T>& q)
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void AngleAxis2RotMat(const Eigen::AngleAxis<T>& angle_axis,
-                             Eigen::Matrix3<T>& R)
+                             Matrix3<T>& R)
 {
   R = angle_axis.toRotationMatrix();
 }
@@ -386,9 +387,9 @@ inline void AngleAxis2RotMat(const Eigen::AngleAxis<T>& angle_axis,
  * @return Rotation matrix
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::Matrix3<T> AngleAxis2RotMat(const Eigen::AngleAxis<T>& angle_axis)
+inline Matrix3<T> AngleAxis2RotMat(const Eigen::AngleAxis<T>& angle_axis)
 {
-  Eigen::Matrix3<T> R;
+  Matrix3<T> R;
   AngleAxis2RotMat(angle_axis, R);
   return R;
 }
@@ -401,9 +402,9 @@ inline Eigen::Matrix3<T> AngleAxis2RotMat(const Eigen::AngleAxis<T>& angle_axis)
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 inline void AngleAxis2EulerAngle(const Eigen::AngleAxis<T>& angle_axis,
-                                 Eigen::Vector3<T>& euler)
+                                 Vector3<T>& euler)
 {
-  Eigen::Matrix3<T> R = AngleAxis2RotMat(angle_axis);
+  Matrix3<T> R = AngleAxis2RotMat(angle_axis);
   RotMat2EulerAngle(R, euler);
 }
 
@@ -414,10 +415,10 @@ inline void AngleAxis2EulerAngle(const Eigen::AngleAxis<T>& angle_axis,
  * @return Euler angles(ZYX) in radians, [roll, pitch, yaw]
  */
 template <typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-inline Eigen::Vector3<T> AngleAxis2EulerAngle(
+inline Vector3<T> AngleAxis2EulerAngle(
     const Eigen::AngleAxis<T>& angle_axis)
 {
-  Eigen::Vector3<T> euler;
+  Vector3<T> euler;
   AngleAxis2EulerAngle(angle_axis, euler);
   return euler;
 }

@@ -328,7 +328,7 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
 
  public:
   using Scalar = T;
-  using Data = Eigen::Matrix2<T>;
+  using Data = Matrix2<T>;
   using HomeSpace = VectorX<T>;
   using Ptr = std::shared_ptr<SpecialOrthogonalGroup2<T>>;
   using ConstPtr = std::shared_ptr<const SpecialOrthogonalGroup2<T>>;
@@ -378,7 +378,7 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
     const SpecialOrthogonalGroup2<T>& y_t =
         (const SpecialOrthogonalGroup2<T>&)y;
 
-    Eigen::Matrix2<T> m_delta = m_.transpose() * y_t.m_;
+    Matrix2<T> m_delta = m_.transpose() * y_t.m_;
     HomeSpace delta(1);
     delta(0) = std::atan2(m_delta(1, 0), m_delta(0, 0));
     return delta;
@@ -397,7 +397,7 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
 
     SpecialOrthogonalGroup2<T>& y_t = (SpecialOrthogonalGroup2<T>&)y;
 
-    Eigen::Matrix2<T> m_delta;
+    Matrix2<T> m_delta;
     m_delta << std::cos(phi(0)), -std::sin(phi(0)), std::sin(phi(0)),
         std::cos(phi(0));
     y_t.m_ = m_ * m_delta;
@@ -420,7 +420,7 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
         "SpecialOrthogonalGroup2 dimension mismatch, expected %zu, got %zu", 1,
         delta.size());
 
-    Eigen::Matrix2<T> m_delta;
+    Matrix2<T> m_delta;
     m_delta << std::cos(delta(0)), -std::sin(delta(0)), std::sin(delta(0)),
         std::cos(delta(0));
     return SpecialOrthogonalGroup2(m_ * m_delta);
@@ -442,7 +442,7 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
         "SpecialOrthogonalGroup2 dimension mismatch, expected %zu, got %zu", 1,
         x.dim());
 
-    Eigen::Matrix2<T> m_delta = x.m_.transpose() * m_;
+    Matrix2<T> m_delta = x.m_.transpose() * m_;
     HomeSpace delta(1);
     delta(0) = std::atan2(m_delta(1, 0), m_delta(0, 0));
     return delta;
@@ -477,7 +477,7 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
 
  public:
   using Scalar = T;
-  using Data = Eigen::Matrix3<T>;
+  using Data = Matrix3<T>;
   using HomeSpace = VectorX<T>;
   using Ptr = std::shared_ptr<SpecialOrthogonalGroup3<T>>;
   using ConstPtr = std::shared_ptr<const SpecialOrthogonalGroup3<T>>;
@@ -528,7 +528,7 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
         (const SpecialOrthogonalGroup3<T>&)y;
 
     Eigen::AngleAxis<T> angle_axis(m_.transpose() * y_t.m_);
-    Eigen::Vector3<T> delta = angle_axis.angle() * angle_axis.axis();
+    Vector3<T> delta = angle_axis.angle() * angle_axis.axis();
     return delta;
   }
 
@@ -545,10 +545,10 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
 
     SpecialOrthogonalGroup3<T>& y_t = (SpecialOrthogonalGroup3<T>&)y;
 
-    Eigen::Matrix3<T> dR;
+    Matrix3<T> dR;
     if (phi.norm() < kEpsilon) {
-      Eigen::Matrix3<T> skew_phi = Vec2Skew<T>({phi(0), phi(1), phi(2)});
-      dR = Eigen::Matrix3<T>::Identity() + skew_phi + skew_phi * skew_phi / 2;
+      Matrix3<T> skew_phi = Vec2Skew<T>({phi(0), phi(1), phi(2)});
+      dR = Matrix3<T>::Identity() + skew_phi + skew_phi * skew_phi / 2;
     } else {
       Eigen::AngleAxis<T> angle_axis;
       angle_axis.angle() = phi.norm();
@@ -575,11 +575,11 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
         "SpecialOrthogonalGroup3 dimension mismatch, expected %zu, got %zu", 3,
         delta.size());
 
-    Eigen::Matrix3<T> dR;
+    Matrix3<T> dR;
     if (delta.norm() < kEpsilon) {
-      Eigen::Matrix3<T> skew_delta =
+      Matrix3<T> skew_delta =
           Vec2Skew<T>({delta(0), delta(1), delta(2)});
-      dR = Eigen::Matrix3<T>::Identity() + skew_delta +
+      dR = Matrix3<T>::Identity() + skew_delta +
            skew_delta * skew_delta / 2;
     } else {
       Eigen::AngleAxis<T> angle_axis;
@@ -607,7 +607,7 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
         x.dim());
 
     Eigen::AngleAxis<T> angle_axis(x.m_.transpose() * m_);
-    Eigen::Vector3<T> delta = angle_axis.angle() * angle_axis.axis();
+    Vector3<T> delta = angle_axis.angle() * angle_axis.axis();
     return delta;
   }
 
@@ -644,7 +644,7 @@ class Surface2D : public ManifoldBase<T>
 
  public:
   using Scalar = T;
-  using Data = Eigen::Vector3<T>;
+  using Data = Vector3<T>;
   /**
    * @brief Function type for the surface function \f$z = f(x, y)\f$
    * @param[in] x: The x coordinate, \f$x\f$

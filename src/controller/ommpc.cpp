@@ -365,19 +365,19 @@ void Ommpc::getPrimManifoldSpecificJacobian(
       G_x = G_f = MatrixX<real_t>::Identity(prim_m.dim(), prim_m.dim());
       break;
     case ManifoldType::kSpecialOrthogonalGroup3: {
-      Eigen::Vector3<real_t> tmp = params_.dt * delta.head<3>();
+      Vector3<real_t> tmp = params_.dt * delta.head<3>();
       Eigen::AngleAxis<real_t> angle_axis;
       angle_axis.angle() = tmp.norm();
-      Eigen::Matrix3<real_t> I = Eigen::Matrix3<real_t>::Identity();
+      Matrix3<real_t> I = Matrix3<real_t>::Identity();
       if (angle_axis.angle() < kEpsilon) {
-        Eigen::Matrix3<real_t> skew_tmp = Vec2Skew(tmp);
-        Eigen::Matrix3<real_t> skew_tmp2 = skew_tmp * skew_tmp;
+        Matrix3<real_t> skew_tmp = Vec2Skew(tmp);
+        Matrix3<real_t> skew_tmp2 = skew_tmp * skew_tmp;
         G_x = I + skew_tmp + skew_tmp2 / 2;
         G_f = I - skew_tmp / 2 + skew_tmp2 / 6;
       } else {
         angle_axis.axis() = -tmp.normalized();
         G_x = angle_axis.toRotationMatrix();
-        Eigen::Matrix3<real_t> skew_tmp_norm = Vec2Skew(tmp.normalized());
+        Matrix3<real_t> skew_tmp_norm = Vec2Skew(tmp.normalized());
         real_t coef1 = (1 - std::cos(angle_axis.angle())) / angle_axis.angle();
         real_t coef2 = 1 - std::sin(angle_axis.angle()) / angle_axis.angle();
         G_f =
