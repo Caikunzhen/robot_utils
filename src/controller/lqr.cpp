@@ -64,8 +64,8 @@ bool Lqr<T>::solve(void)
   T cost_time = 0;
   while (1) {
     K = (R + B_T * P * B).ldlt().solve(B_T * P * A);
-    Eigen::MatrixX<T> A_cl = A - B * K;
-    Eigen::MatrixX<T> Res = A_T * P * A_cl + Q - P;
+    MatrixX<T> A_cl = A - B * K;
+    MatrixX<T> Res = A_T * P * A_cl + Q - P;
 
     data_.res = Res.cwiseAbs().maxCoeff();
     cost_time = GetCurrTime<T>() - start_time;
@@ -80,8 +80,8 @@ bool Lqr<T>::solve(void)
       break;
     }
 
-    Eigen::MatrixX<T> DeltaP = Res;
-    Eigen::MatrixX<T> A_cl_T = A_cl.transpose();
+    MatrixX<T> DeltaP = Res;
+    MatrixX<T> A_cl_T = A_cl.transpose();
     for (size_t j = 0; j < 100; ++j) {
       DeltaP = A_cl_T * DeltaP * A_cl + Res;
     }

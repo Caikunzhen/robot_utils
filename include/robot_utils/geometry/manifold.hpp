@@ -37,6 +37,7 @@
 
 #include "robot_utils/core/assert.hpp"
 #include "robot_utils/core/periodic_data.hpp"
+#include "robot_utils/core/typedef.hpp"
 #include "robot_utils/geometry/core.hpp"
 /* Exported macro ------------------------------------------------------------*/
 
@@ -89,7 +90,7 @@ class ManifoldBase
  public:
   using Scalar = T;
   using Type = ManifoldType;
-  using HomeSpace = Eigen::VectorX<T>;
+  using HomeSpace = VectorX<T>;
   using Ptr = std::shared_ptr<ManifoldBase<T>>;
   using ConstPtr = std::shared_ptr<const ManifoldBase<T>>;
 
@@ -191,8 +192,8 @@ class EuclideanSpaceX : public ManifoldBase<T>
 
  public:
   using Scalar = T;
-  using Data = Eigen::VectorX<T>;
-  using HomeSpace = Eigen::VectorX<T>;
+  using Data = VectorX<T>;
+  using HomeSpace = VectorX<T>;
   using Ptr = std::shared_ptr<EuclideanSpaceX<T>>;
   using ConstPtr = std::shared_ptr<const EuclideanSpaceX<T>>;
 
@@ -328,7 +329,7 @@ class SpecialOrthogonalGroup2 : public ManifoldBase<T>
  public:
   using Scalar = T;
   using Data = Eigen::Matrix2<T>;
-  using HomeSpace = Eigen::VectorX<T>;
+  using HomeSpace = VectorX<T>;
   using Ptr = std::shared_ptr<SpecialOrthogonalGroup2<T>>;
   using ConstPtr = std::shared_ptr<const SpecialOrthogonalGroup2<T>>;
 
@@ -477,7 +478,7 @@ class SpecialOrthogonalGroup3 : public ManifoldBase<T>
  public:
   using Scalar = T;
   using Data = Eigen::Matrix3<T>;
-  using HomeSpace = Eigen::VectorX<T>;
+  using HomeSpace = VectorX<T>;
   using Ptr = std::shared_ptr<SpecialOrthogonalGroup3<T>>;
   using ConstPtr = std::shared_ptr<const SpecialOrthogonalGroup3<T>>;
 
@@ -651,7 +652,7 @@ class Surface2D : public ManifoldBase<T>
    * @return The z coordinate, \f$z = f(x, y)\f$
    */
   using SurfFunc = std::function<T(T, T)>;
-  using HomeSpace = Eigen::VectorX<T>;
+  using HomeSpace = VectorX<T>;
   using Ptr = std::shared_ptr<Surface2D<T>>;
   using ConstPtr = std::shared_ptr<const Surface2D<T>>;
 
@@ -787,7 +788,7 @@ class CompoundManifold : public ManifoldBase<T>
   using Scalar = T;
   using ManifoldBasePtr = typename ManifoldBase<T>::Ptr;
   using Data = std::vector<ManifoldBasePtr>;
-  using HomeSpace = Eigen::VectorX<T>;
+  using HomeSpace = VectorX<T>;
   using Ptr = std::shared_ptr<CompoundManifold<T>>;
   using ConstPtr = std::shared_ptr<const CompoundManifold<T>>;
 

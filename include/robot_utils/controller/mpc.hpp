@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "robot_utils/core/assert.hpp"
+#include "robot_utils/core/typedef.hpp"
 /* Exported macro ------------------------------------------------------------*/
 
 namespace robot_utils
@@ -57,21 +58,21 @@ struct MpcParams {
   qpOASES::real_t max_cost_time = 0.01;
 
   /// state matrix, \f$A \in \mathbb{R}^{n \times n}\f$
-  Eigen::MatrixX<real_t> A;
+  MatrixX<real_t> A;
   /// input matrix, \f$B \in \mathbb{R}^{n \times m}\f$
-  Eigen::MatrixX<real_t> B;
+  MatrixX<real_t> B;
   DiagMatX Q;  ///< state cost matrix, \f$Q \in \mathbb{R}^{n \times n}\f$
   DiagMatX P;  ///< terminal cost matrix, \f$P \in \mathbb{R}^{n \times n}\f$
   DiagMatX R;  ///< input cost matrix, \f$R \in \mathbb{R}^{m \times m}\f$
 
   /// state lower bound, \f$x_{min} \in \mathbb{R}^n\f$
-  Eigen::VectorX<real_t> x_min;
+  VectorX<real_t> x_min;
   /// state upper bound, \f$x_{max} \in \mathbb{R}^n\f$
-  Eigen::VectorX<real_t> x_max;
+  VectorX<real_t> x_max;
   /// input lower bound, \f$u_{min} \in \mathbb{R}^m\f$
-  Eigen::VectorX<real_t> u_min;
+  VectorX<real_t> u_min;
   /// input upper bound, \f$u_{max} \in \mathbb{R}^m\f$
-  Eigen::VectorX<real_t> u_max;
+  VectorX<real_t> u_max;
 
   bool state_bound = false;  ///< whether to use state bound
   bool input_bound = false;  ///< whether to use input bound
@@ -183,8 +184,8 @@ class Mpc
   using ConstPtr = std::shared_ptr<const Mpc>;
 
   using real_t = qpOASES::real_t;
-  using StateVec = Eigen::VectorX<real_t>;
-  using InputVec = Eigen::VectorX<real_t>;
+  using StateVec = VectorX<real_t>;
+  using InputVec = VectorX<real_t>;
   using DiagMatX = Eigen::DiagonalMatrix<real_t, Eigen::Dynamic>;
   using CtrlSeq = std::vector<InputVec>;
   using StateSeq = std::vector<StateVec>;
@@ -321,11 +322,11 @@ class Mpc
   Params params_;
   Data data_;
 
-  Eigen::VectorX<real_t> x0_;  ///< initial state, \f$x_0 \in \mathbb{R}^n\f$
+  VectorX<real_t> x0_;  ///< initial state, \f$x_0 \in \mathbb{R}^n\f$
   /// input transition matrix, \f$\bar S \in \mathbb{R}^{nN \times mN}\f$
-  Eigen::MatrixX<real_t> S_bar_;
+  MatrixX<real_t> S_bar_;
   /// init state transition matrix, \f$\bar T \in \mathbb{R}^{nN \times n}\f$
-  Eigen::MatrixX<real_t> T_bar_;
+  MatrixX<real_t> T_bar_;
   /// state cost matrix, \f$\bar Q \in \mathbb{R}^{nN \times nN}\f$
   DiagMatX Q_bar_;
   /// input cost matrix, \f$\bar R \in \mathbb{R}^{mN \times mN}\f$
@@ -334,27 +335,27 @@ class Mpc
   /// Hessian matrix, \f$^{qp}H \in \mathbb{R}^{mN \times mN}\f$
   Eigen::Matrix<real_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> H_;
   /// gradient vector, \f$^{qp}g \in \mathbb{R}^{mN}\f$
-  Eigen::VectorX<real_t> g_;
+  VectorX<real_t> g_;
   /// lower bound vector, \f$^{qp}U_{min} \in \mathbb{R}^{mN}\f$
-  Eigen::VectorX<real_t> lb_;
+  VectorX<real_t> lb_;
   const real_t* lb_ptr_ = nullptr;
   /// upper bound vector, \f$^{qp}U_{max} \in \mathbb{R}^{mN}\f$
-  Eigen::VectorX<real_t> ub_;
+  VectorX<real_t> ub_;
   const real_t* ub_ptr_ = nullptr;
   /// constraint matrix, \f$^{qp}A \in \mathbb{R}^{nN \times mN}\f$
   Eigen::Matrix<real_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A_;
   const real_t* A_ptr_ = nullptr;
   /// lower bound vector for constraints, \f$^{qp}b_{min} \in \mathbb{R}^{nN}\f$
-  Eigen::VectorX<real_t> lbA_;
+  VectorX<real_t> lbA_;
   const real_t* lbA_ptr_ = nullptr;
   /// upper bound vector for constraints, \f$^{qp}b_{max} \in \mathbb{R}^{nN}\f$
-  Eigen::VectorX<real_t> ubA_;
+  VectorX<real_t> ubA_;
   const real_t* ubA_ptr_ = nullptr;
   /**
    * @brief input vector, \f$^{qp}U = \left[u_0^T, u_1^T, \ldots,
    * u_{N-1}^T\right]^T \in \mathbb{R}^{mN}\f$
    */
-  Eigen::VectorX<real_t> U_;
+  VectorX<real_t> U_;
 
   qpOASES::QProblem qp_;
 };
@@ -363,4 +364,4 @@ class Mpc
 }  // namespace robot_utils
 #endif  // HAS_QPOASES
 
-#endif  /* ROBOT_UTILS_CONTROLLER_MPC_HPP_ */
+#endif /* ROBOT_UTILS_CONTROLLER_MPC_HPP_ */
