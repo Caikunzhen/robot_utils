@@ -693,7 +693,7 @@ using PolyTrajMinSnapWithTimeOpt3 = PolyTrajOptWithTimeOpt<3, 4>;
  * @param[out] traj Output polynomial trajectory segment, \f$P\left(t\right)\f$
  */
 template <typename T>
-void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Eigen::Vector2<T>& x0,
+void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Vector2<T>& x0,
                        T xf, PolyTraj<T>& traj);
 }  // namespace robot_utils
 

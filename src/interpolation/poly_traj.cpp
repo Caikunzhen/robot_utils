@@ -777,7 +777,7 @@ double PolyTrajOptWithTimeOpt<Dim, EnergyOrder>::objectiveFunc(
 #endif  // HAS_NLOPT
 
 template <typename T>
-void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Eigen::Vector2<T>& x0,
+void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Vector2<T>& x0,
                        T xf, PolyTraj<T>& traj)
 {
   RU_ASSERT(max_vel > 0, "Max velocity must be greater than 0");

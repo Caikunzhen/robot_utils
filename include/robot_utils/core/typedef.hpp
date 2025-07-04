@@ -27,10 +27,17 @@ namespace robot_utils
 {
 /* Exported constants --------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
-
+template <typename T>
+using Matrix2 = Eigen::Matrix<T, 2, 2>;
+template <typename T>
+using Matrix3 = Eigen::Matrix<T, 3, 3>;
 template <typename T>
 using MatrixX = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
 
+template <typename T>
+using Vector2 = Eigen::Matrix<T, 2, 1>;
+template <typename T>
+using Vector3 = Eigen::Matrix<T, 3, 1>;
 template <typename T>
 using VectorX = Eigen::Matrix<T, Eigen::Dynamic, 1>;
 /* Exported variables --------------------------------------------------------*/
