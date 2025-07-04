@@ -18,7 +18,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "robot_utils/core/computer_info.hpp"
 
-#include <filesystem>
+#include <experimental/filesystem>
 #include <fstream>
 #include <sstream>
 /* Private macro -------------------------------------------------------------*/
@@ -120,10 +120,11 @@ void CpuInfo::updateDynInfo(void)
 
 void CpuInfo::updateTemp(void)
 {
+  namespace fs = std::experimental::filesystem;
   // Load CPU temperature from /sys/class/thermal/thermal_zone*/temp
   const std::string thermal_path = "/sys/class/thermal/";
-  for (const auto& entry : std::filesystem::directory_iterator(thermal_path)) {
-    if (entry.is_directory() &&
+  for (const auto& entry : fs::directory_iterator(thermal_path)) {
+    if (fs::is_regular_file(entry.status()) &&
         entry.path().string().find("thermal_zone") != std::string::npos) {
       std::ifstream type_file(entry.path() / "type");
       if (!type_file.is_open()) {

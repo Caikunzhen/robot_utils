@@ -785,7 +785,7 @@ class CompoundManifold : public ManifoldBase<T>
 
  public:
   using Scalar = T;
-  using ManifoldBasePtr = ManifoldBase<T>::Ptr;
+  using ManifoldBasePtr = typename ManifoldBase<T>::Ptr;
   using Data = std::vector<ManifoldBasePtr>;
   using HomeSpace = Eigen::VectorX<T>;
   using Ptr = std::shared_ptr<CompoundManifold<T>>;

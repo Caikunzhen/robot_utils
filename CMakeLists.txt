@@ -43,6 +43,8 @@ target_link_libraries(
   PUBLIC
     Eigen3::Eigen
     yaml-cpp
+  PRIVATE
+    stdc++fs
 )
 
 target_include_directories(
@@ -67,7 +69,7 @@ target_compile_options(
 target_compile_features(
   ${PROJECT_NAME}
   PUBLIC
-    cxx_std_20
+    cxx_std_17
 )
 
 if (qpOASES_FOUND)

@@ -526,9 +526,9 @@ class PolyTrajOptWithTimeOpt : public PolyTrajOpt<double, Dim, EnergyOrder>
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   using Params = PolyTrajOptWithTimeOptParams;
-  using State = PolyTrajOpt<double, Dim, EnergyOrder>::State;
-  using Waypoint = PolyTrajOpt<double, Dim, EnergyOrder>::Waypoint;
-  using Waypoints = PolyTrajOpt<double, Dim, EnergyOrder>::Waypoints;
+  using State = typename PolyTrajOpt<double, Dim, EnergyOrder>::State;
+  using Waypoint = typename PolyTrajOpt<double, Dim, EnergyOrder>::Waypoint;
+  using Waypoints = typename PolyTrajOpt<double, Dim, EnergyOrder>::Waypoints;
 
   using Ptr = std::shared_ptr<PolyTrajOptWithTimeOpt<Dim, EnergyOrder>>;
   using ConstPtr =

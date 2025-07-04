@@ -382,8 +382,8 @@ class PidNode
   Params params_;
   Data data_;
 
-  Td<T>::Ptr err_td_ptr_ = nullptr;
-  Td<T>::Ptr fdb_td_ptr_ = nullptr;
+  typename Td<T>::Ptr err_td_ptr_ = nullptr;
+  typename Td<T>::Ptr fdb_td_ptr_ = nullptr;
 };
 
 extern template class PidNode<float>;

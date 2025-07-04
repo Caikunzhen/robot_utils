@@ -371,7 +371,7 @@ class CascadedPid
   using Params = CascadedPidParams<T>;
   using NodeParams = PidNodeParams<T>;
   using NodeParamsList = std::vector<NodeParams>;
-  using Data = PidNode<T>::Data;
+  using Data = typename PidNode<T>::Data;
   using DataList = std::vector<Data>;
 
   using Ptr = std::shared_ptr<CascadedPid<T>>;
@@ -493,7 +493,7 @@ class ParallelPid
   using Params = ParallelPidParams<T>;
   using NodeParams = PidNodeParams<T>;
   using NodeParamsList = std::vector<NodeParams>;
-  using Data = PidNode<T>::Data;
+  using Data = typename PidNode<T>::Data;
   using DataList = std::vector<Data>;
 
   /// reference vector
