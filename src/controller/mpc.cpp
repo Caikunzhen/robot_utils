@@ -154,9 +154,9 @@ Mpc::Mpc(const Params& params)
   const size_t& n = params_.n;
   const size_t& m = params_.m;
   const size_t& N = params_.horizon;
-  U_ = Eigen::VectorX<real_t>::Zero(m * N);
-  S_bar_ = Eigen::MatrixX<real_t>::Zero(n * N, m * N);
-  T_bar_ = Eigen::MatrixX<real_t>::Zero(n * N, n);
+  U_ = VectorX<real_t>::Zero(m * N);
+  S_bar_ = MatrixX<real_t>::Zero(n * N, m * N);
+  T_bar_ = MatrixX<real_t>::Zero(n * N, n);
   Q_bar_.resize(n * N);
   R_bar_.resize(m * N);
   setParams(params);
@@ -266,7 +266,7 @@ void Mpc::getPredStateSeq(StateSeq& x_seq) const
     RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
-  Eigen::VectorX<real_t> x_bar = S_bar_ * U_ + T_bar_ * x0_;
+  VectorX<real_t> x_bar = S_bar_ * U_ + T_bar_ * x0_;
   x_seq.clear();
 
   for (size_t i = 0; i < params_.horizon; ++i) {
@@ -342,7 +342,7 @@ void Mpc::calcSBar(void)
   const size_t& N = params_.horizon;
   const size_t& n = params_.n;
   const size_t& m = params_.m;
-  Eigen::MatrixX<real_t> A_i_x_B = params_.B;
+  MatrixX<real_t> A_i_x_B = params_.B;
   for (size_t i = 0; i < N; ++i) {
     for (size_t j = 0; j < N - i; ++j) {
       S_bar_.block((i + j) * n, j * m, n, m) = A_i_x_B;
@@ -358,7 +358,7 @@ void Mpc::calcTBar(void)
 {
   const size_t& N = params_.horizon;
   const size_t& n = params_.n;
-  Eigen::MatrixX<real_t> A_i = Eigen::MatrixX<real_t>::Identity(n, n);
+  MatrixX<real_t> A_i = MatrixX<real_t>::Identity(n, n);
   for (size_t i = 0; i < N; ++i) {
     A_i = params_.A * A_i;
     T_bar_.block(i * n, 0, n, n) = A_i;
@@ -395,8 +395,7 @@ void Mpc::calcH(void)
 
 void Mpc::calcG(const StateSeq& x_ref_seq)
 {
-  Eigen::VectorX<real_t> x_ref =
-      Eigen::VectorX<real_t>::Zero(params_.n * params_.horizon);
+  VectorX<real_t> x_ref = VectorX<real_t>::Zero(params_.n * params_.horizon);
   for (size_t i = 0; i < params_.horizon; ++i) {
     RU_ASSERT(x_ref_seq[i].size() == params_.n,
               "x_ref_seq[%d] size must be equal to n", i);
@@ -417,8 +416,8 @@ void Mpc::calcLbAUbA(void)
   size_t& n = params_.n;
   size_t& m = params_.m;
 
-  Eigen::VectorX<real_t> x_bar_min = params_.x_min.replicate(N, 1);
-  Eigen::VectorX<real_t> x_bar_max = params_.x_max.replicate(N, 1);
+  VectorX<real_t> x_bar_min = params_.x_min.replicate(N, 1);
+  VectorX<real_t> x_bar_max = params_.x_max.replicate(N, 1);
 
   lbA_ = x_bar_min - T_bar_ * x0_;
   ubA_ = x_bar_max - T_bar_ * x0_;

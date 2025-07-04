@@ -116,9 +116,9 @@ Ommpc::Ommpc(const Params& params)
   const size_t& n = params_.n;
   const size_t& m = params_.m;
   const size_t& N = params_.horizon;
-  S_bar_ = Eigen::MatrixX<real_t>::Zero(N * n, N * m);
-  T_bar_ = Eigen::MatrixX<real_t>::Zero(N * n, n);
-  dU_ = Eigen::MatrixX<real_t>::Zero(N * m, 1);
+  S_bar_ = MatrixX<real_t>::Zero(N * n, N * m);
+  T_bar_ = MatrixX<real_t>::Zero(N * n, n);
+  dU_ = MatrixX<real_t>::Zero(N * m, 1);
   Q_bar_.resize(N * n);
   R_bar_.resize(N * m);
   if (params_.input_bound) {
@@ -159,8 +159,8 @@ bool Ommpc::solve(const StateSeq& x_ref_seq, const CtrlSeq& u_ref_seq,
   }
   u_ref_seq_ = u_ref_seq;
 
-  Eigen::MatrixX<real_t> F_x_i, F_u_i;
-  Eigen::MatrixX<real_t> F_x_mul = Eigen::MatrixX<real_t>::Identity(n, n);
+  MatrixX<real_t> F_x_i, F_u_i;
+  MatrixX<real_t> F_x_mul = MatrixX<real_t>::Identity(n, n);
   for (size_t i = 0; i < N; ++i) {
     RU_ASSERT(x_ref_seq[i].dim() == n,
               "x_ref_seq[%zu] dim must be equal to n, expected %zu, got %zu", i,
@@ -183,7 +183,7 @@ bool Ommpc::solve(const StateSeq& x_ref_seq, const CtrlSeq& u_ref_seq,
     }
   }
 
-  Eigen::MatrixX<real_t> tmp = S_bar_.transpose() * Q_bar_;
+  MatrixX<real_t> tmp = S_bar_.transpose() * Q_bar_;
   H_ = tmp * S_bar_;
   H_.diagonal() += R_bar_.diagonal();
   dx0_ = x0 - x_ref_seq[0];
@@ -261,7 +261,7 @@ void Ommpc::getPredStateSeq(StateSeq& x_seq) const
     RU_ASSERT(false, "MPC has not been solved yet");
     return;
   }
-  Eigen::VectorX<real_t> dx_bar = S_bar_ * dU_ + T_bar_ * dx0_;
+  VectorX<real_t> dx_bar = S_bar_ * dU_ + T_bar_ * dx0_;
   x_seq.clear();
 
   for (size_t i = 0; i < params_.horizon; ++i) {
@@ -333,14 +333,14 @@ void Ommpc::calcRBar(void)
 
 void Ommpc::getManifoldSpecificJacobian(
     const StateVec& x_ref, const ManifoldBase<real_t>::HomeSpace& delta,
-    Eigen::MatrixX<real_t>& G_x, Eigen::MatrixX<real_t>& G_f)
+    MatrixX<real_t>& G_x, MatrixX<real_t>& G_f)
 {
-  G_x = G_f = Eigen::MatrixX<real_t>::Zero(x_ref.dim(), x_ref.dim());
+  G_x = G_f = MatrixX<real_t>::Zero(x_ref.dim(), x_ref.dim());
   size_t start_idx = 0;
   for (size_t i = 0; i < x_ref.data().size(); ++i) {
     const auto& prim_m = x_ref.data()[i];
     const auto& dim = prim_m->dim();
-    Eigen::MatrixX<real_t> G_x_tmp, G_f_tmp;
+    MatrixX<real_t> G_x_tmp, G_f_tmp;
     getPrimManifoldSpecificJacobian(*prim_m, delta.segment(start_idx, dim),
                                     G_x_tmp, G_f_tmp);
     G_x.block(start_idx, start_idx, dim, dim) = G_x_tmp;
@@ -351,8 +351,8 @@ void Ommpc::getManifoldSpecificJacobian(
 
 void Ommpc::getPrimManifoldSpecificJacobian(
     const ManifoldBase<real_t>& prim_m,
-    const ManifoldBase<real_t>::HomeSpace& delta, Eigen::MatrixX<real_t>& G_x,
-    Eigen::MatrixX<real_t>& G_f)
+    const ManifoldBase<real_t>::HomeSpace& delta, MatrixX<real_t>& G_x,
+    MatrixX<real_t>& G_f)
 {
   RU_ASSERT(prim_m.dim() == delta.size(),
             "Manifold dimension mismatch, expected %zu, got %zu", prim_m.dim(),
@@ -362,7 +362,7 @@ void Ommpc::getPrimManifoldSpecificJacobian(
     case ManifoldType::kEuclideanSpaceX:
     case ManifoldType::kSpecialOrthogonalGroup2:
     case ManifoldType::kSurface2D:
-      G_x = G_f = Eigen::MatrixX<real_t>::Identity(prim_m.dim(), prim_m.dim());
+      G_x = G_f = MatrixX<real_t>::Identity(prim_m.dim(), prim_m.dim());
       break;
     case ManifoldType::kSpecialOrthogonalGroup3: {
       Eigen::Vector3<real_t> tmp = params_.dt * delta.head<3>();
@@ -392,11 +392,10 @@ void Ommpc::getPrimManifoldSpecificJacobian(
 }
 
 void Ommpc::getJacobian(const StateVec& x_ref, const InputVec& u_ref,
-                        Eigen::MatrixX<real_t>& F_x,
-                        Eigen::MatrixX<real_t>& F_u)
+                        MatrixX<real_t>& F_x, MatrixX<real_t>& F_u)
 {
-  Eigen::MatrixX<real_t> G_x, G_f;
-  Eigen::VectorX<real_t> delta = params_.f(x_ref, u_ref);
+  MatrixX<real_t> G_x, G_f;
+  VectorX<real_t> delta = params_.f(x_ref, u_ref);
   getManifoldSpecificJacobian(x_ref, delta, G_x, G_f);
   F_x = G_x + params_.dt * G_f * params_.df_dx(x_ref, u_ref);
   F_u = params_.dt * G_f * params_.df_du(x_ref, u_ref);

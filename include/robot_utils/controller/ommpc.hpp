@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "robot_utils/core/assert.hpp"
+#include "robot_utils/core/typedef.hpp"
 #include "robot_utils/geometry/manifold.hpp"
 /* Exported macro ------------------------------------------------------------*/
 
@@ -68,10 +69,10 @@ struct OmmpcParams {
    * @param[in] u: Input vector, \f$u \in \mathbb{R}^m\f$
    * @return \f$f\left(\mathrm{x}, u\right)\f$
    */
-  using DynFunc = std::function<Eigen::VectorX<real_t>(
-      const CompoundManifold<real_t>&, const Eigen::VectorX<real_t>&)>;
-  using SysSpecificJacobianFunc = std::function<Eigen::MatrixX<real_t>(
-      const CompoundManifold<real_t>&, const Eigen::VectorX<real_t>&)>;
+  using DynFunc = std::function<VectorX<real_t>(const CompoundManifold<real_t>&,
+                                                const VectorX<real_t>&)>;
+  using SysSpecificJacobianFunc = std::function<MatrixX<real_t>(
+      const CompoundManifold<real_t>&, const VectorX<real_t>&)>;
 
   size_t n = 0;        ///< demension of manifold, \f$n\f$
   size_t m = 0;        ///< number of inputs, \f$m\f$
@@ -110,9 +111,9 @@ struct OmmpcParams {
   DiagMatX R;  ///< input cost matrix, \f$R \in \mathbb{R}^{m \times m}\f$
 
   /// input lower bound, \f$u_{min} \in \mathbb{R}^m\f$
-  Eigen::VectorX<real_t> u_min;
+  VectorX<real_t> u_min;
   /// input upper bound, \f$u_{max} \in \mathbb{R}^m\f$
-  Eigen::VectorX<real_t> u_max;
+  VectorX<real_t> u_max;
 
   bool input_bound = false;  ///< whether to use input bound
 
@@ -190,7 +191,7 @@ class Ommpc
 
   using real_t = qpOASES::real_t;
   using StateVec = CompoundManifold<real_t>;
-  using InputVec = Eigen::VectorX<real_t>;
+  using InputVec = VectorX<real_t>;
   using DiagMatX = Eigen::DiagonalMatrix<real_t, Eigen::Dynamic>;
   using CtrlSeq = std::vector<InputVec>;
   using StateSeq = std::vector<StateVec>;
@@ -315,16 +316,15 @@ class Ommpc
 
   void getManifoldSpecificJacobian(const StateVec& x_ref,
                                    const ManifoldBase<real_t>::HomeSpace& delta,
-                                   Eigen::MatrixX<real_t>& G_x,
-                                   Eigen::MatrixX<real_t>& G_f);
+                                   MatrixX<real_t>& G_x, MatrixX<real_t>& G_f);
 
   void getPrimManifoldSpecificJacobian(
       const ManifoldBase<real_t>& prim_m,
-      const ManifoldBase<real_t>::HomeSpace& delta, Eigen::MatrixX<real_t>& G_x,
-      Eigen::MatrixX<real_t>& G_f);
+      const ManifoldBase<real_t>::HomeSpace& delta, MatrixX<real_t>& G_x,
+      MatrixX<real_t>& G_f);
 
   void getJacobian(const StateVec& x_ref, const InputVec& u_ref,
-                   Eigen::MatrixX<real_t>& F_x, Eigen::MatrixX<real_t>& F_u);
+                   MatrixX<real_t>& F_x, MatrixX<real_t>& F_u);
 
   static constexpr real_t kEpsilon =
       std::is_same_v<real_t, float> ? 1e-4f : 1e-8;
@@ -333,7 +333,7 @@ class Ommpc
   Data data_;
 
   /// initial state, \f$\delta\mathrm{x}_0 \in \mathbb{R}^n\f$
-  Eigen::VectorX<real_t> dx0_;
+  VectorX<real_t> dx0_;
   /**
    * @brief referece state sequence, \f$\mathrm{x}_{0:N}^d =
    * \left[\mathrm{x}_0^d, \mathrm{x}_1^d, \ldots, \mathrm{x}_N^d\right],
@@ -346,9 +346,9 @@ class Ommpc
    */
   CtrlSeq u_ref_seq_;
   /// input transition matrix, \f$\bar S \in \mathbb{R}^{nN \times mN}\f$
-  Eigen::MatrixX<real_t> S_bar_;
+  MatrixX<real_t> S_bar_;
   /// init state transition matrix, \f$\bar T \in \mathbb{R}^{nN \times n}\f$
-  Eigen::MatrixX<real_t> T_bar_;
+  MatrixX<real_t> T_bar_;
   /// state cost matrix, \f$\bar Q \in \mathbb{R}^{nN \times nN}\f$
   DiagMatX Q_bar_;
   /// input cost matrix, \f$\bar R \in \mathbb{R}^{mN \times mN}\f$
@@ -357,18 +357,18 @@ class Ommpc
   /// Hessian matrix, \f$^{qp}H \in \mathbb{R}^{mN \times mN}\f$
   Eigen::Matrix<real_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> H_;
   /// gradient vector, \f$^{qp}g \in \mathbb{R}^{mN}\f$
-  Eigen::VectorX<real_t> g_;
+  VectorX<real_t> g_;
   /// lower bound vector, \f$\delta\ ^{qp}U_{min} \in \mathbb{R}^{mN}\f$
-  Eigen::VectorX<real_t> lb_;
+  VectorX<real_t> lb_;
   real_t* lb_ptr_ = nullptr;
   /// upper bound vector, \f$\delta\ ^{qp}U_{max} \in \mathbb{R}^{mN}\f$
-  Eigen::VectorX<real_t> ub_;
+  VectorX<real_t> ub_;
   real_t* ub_ptr_ = nullptr;
   /**
    * @brief delta input vector, \f$\delta\ ^{qp}U = \left[\delta u_0^T, \delta
    * u_1^T, \ldots, \delta u_{N-1}^T\right]^T \in \mathbb{R}^{mN}\f$
    */
-  Eigen::VectorX<real_t> dU_;
+  VectorX<real_t> dU_;
 
   qpOASES::QProblemB qp_;
 };

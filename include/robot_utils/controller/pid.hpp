@@ -28,6 +28,7 @@
 
 #include "robot_utils/controller/pid_node.hpp"
 #include "robot_utils/core/assert.hpp"
+#include "robot_utils/core/typedef.hpp"
 /* Exported macro ------------------------------------------------------------*/
 
 namespace robot_utils
@@ -378,9 +379,9 @@ class CascadedPid
   using ConstPtr = std::shared_ptr<const CascadedPid<T>>;
 
   /// feedback vector
-  using FdbVec = Eigen::VectorX<T>;
+  using FdbVec = VectorX<T>;
   /// feedforward vector
-  using FfdVec = Eigen::VectorX<T>;
+  using FfdVec = VectorX<T>;
 
   /**
    * @brief Constructor of the cascaded PID controller
@@ -497,9 +498,9 @@ class ParallelPid
   using DataList = std::vector<Data>;
 
   /// reference vector
-  using RefVec = Eigen::VectorX<T>;
+  using RefVec = VectorX<T>;
   /// feedback vector
-  using FdbVec = Eigen::VectorX<T>;
+  using FdbVec = VectorX<T>;
 
   /**
    * @brief Constructor of the parallel PID controller

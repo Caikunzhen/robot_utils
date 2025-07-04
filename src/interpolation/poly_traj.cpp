@@ -40,9 +40,9 @@ bool SmoothedL1(double mu, double x, double& f, double& df);
 /* Exported function definitions ---------------------------------------------*/
 
 template <typename T>
-Eigen::VectorX<T> Poly<T>::operator()(const T& t, size_t n_diff) const
+VectorX<T> Poly<T>::operator()(const T& t, size_t n_diff) const
 {
-  Eigen::VectorX<T> x(coeff_.rows());
+  VectorX<T> x(coeff_.rows());
   x.setZero();
   if (n_diff > coeff_.cols()) {
     return x;
@@ -59,13 +59,13 @@ Eigen::VectorX<T> Poly<T>::operator()(const T& t, size_t n_diff) const
 template <typename T>
 PolyTraj<T>::PolyTraj(size_t dim, int cfg_mask) : dim_(dim), cfg_mask_(cfg_mask)
 {
-  polys_.emplace_back(Eigen::MatrixX<T>::Zero(dim, 1));
+  polys_.emplace_back(MatrixX<T>::Zero(dim, 1));
   dts_.resize(1);
   dts_[0] = 0;
 }
 
 template <typename T>
-Eigen::VectorX<T> PolyTraj<T>::operator()(T t, size_t n_diff) const
+VectorX<T> PolyTraj<T>::operator()(T t, size_t n_diff) const
 {
   size_t idx = 0;
   T dt = 0;
@@ -107,10 +107,12 @@ void PolyTraj<T>::getPolyIdxAndDt(const T& t, size_t& idx, T& dt) const
 }
 
 template <typename T, size_t Dim, size_t EnergyOrder>
-void PolyTrajOpt<T, Dim, EnergyOrder>::optimize(
-    const State& x0, const State& xf, const Waypoints& xi, T t0,
-    const std::vector<T>& dts, PolyTraj<T>& traj, T* J,
-    Eigen::VectorX<T>* partial_grad_by_dts)
+void PolyTrajOpt<T, Dim, EnergyOrder>::optimize(const State& x0,
+                                                const State& xf,
+                                                const Waypoints& xi, T t0,
+                                                const std::vector<T>& dts,
+                                                PolyTraj<T>& traj, T* J,
+                                                VectorX<T>* partial_grad_by_dts)
 {
   RU_ASSERT(xi.size() == dts.size() - 1,
             "xi must have the same number of columns as size of durs - 1");
@@ -119,7 +121,7 @@ void PolyTrajOpt<T, Dim, EnergyOrder>::optimize(
     M_ = dts.size();
     C_T_ = getCT();
   }
-  dts_ = Eigen::Map<const Eigen::VectorX<T>>(dts.data(), dts.size());
+  dts_ = Eigen::Map<const VectorX<T>>(dts.data(), dts.size());
   dt2s_ = dts_.cwiseProduct(dts_);
   dt3s_ = dt2s_.cwiseProduct(dts_);
   dt4s_ = dt3s_.cwiseProduct(dts_);
@@ -131,11 +133,11 @@ void PolyTrajOpt<T, Dim, EnergyOrder>::optimize(
     dt7s_ = dt6s_.cwiseProduct(dts_);
     dt8s_ = dt7s_.cwiseProduct(dts_);
   }
-  Eigen::MatrixX<T> H = getH();
-  Eigen::MatrixX<T> R = C_T_.transpose() * H * C_T_;
+  MatrixX<T> H = getH();
+  MatrixX<T> R = C_T_.transpose() * H * C_T_;
   const size_t df_dim = 2 * _R + M_ - 1;
   const size_t dp_dim = (M_ - 1) * (_R - 1);
-  Eigen::MatrixX<T> Df(df_dim, Dim);
+  MatrixX<T> Df(df_dim, Dim);
   for (size_t i = 0; i < Dim; ++i) {
     Df.col(i).segment(0, _R) = x0.row(i);
     Df.col(i).segment(_R, _R) = xf.row(i);
@@ -143,17 +145,17 @@ void PolyTrajOpt<T, Dim, EnergyOrder>::optimize(
       Df(2 * _R + j, i) = xi[j][i];
     }
   }
-  Eigen::MatrixX<T> DfDp(df_dim + dp_dim, Dim);
+  MatrixX<T> DfDp(df_dim + dp_dim, Dim);
   if (dp_dim != 0) {
-    Eigen::MatrixX<T> R_PF = R.block(df_dim, 0, dp_dim, df_dim);
-    Eigen::MatrixX<T> R_PP = R.block(df_dim, df_dim, dp_dim, dp_dim);
-    Eigen::MatrixX<T> Dp = R_PP.llt().solve(-R_PF * Df);
+    MatrixX<T> R_PF = R.block(df_dim, 0, dp_dim, df_dim);
+    MatrixX<T> R_PP = R.block(df_dim, df_dim, dp_dim, dp_dim);
+    MatrixX<T> Dp = R_PP.llt().solve(-R_PF * Df);
     DfDp << Df, Dp;
   } else {
     DfDp << Df;
   }
-  Eigen::MatrixX<T> D = C_T_ * DfDp;
-  std::vector<Eigen::MatrixX<T>> coeffs;
+  MatrixX<T> D = C_T_ * DfDp;
+  std::vector<MatrixX<T>> coeffs;
   coeffs.reserve(M_);
   Eigen::Matrix<T, 2 * _R, Dim> d;
   for (size_t i = 0; i < M_; ++i) {
@@ -164,10 +166,10 @@ void PolyTrajOpt<T, Dim, EnergyOrder>::optimize(
   traj.setTraj(t0, coeffs, dts);
 
   if (partial_grad_by_dts) {
-    Eigen::MatrixX<T> R_PP_inv_R_PF;
+    MatrixX<T> R_PP_inv_R_PF;
     if (dp_dim != 0) {
-      Eigen::MatrixX<T> R_PP = R.block(df_dim, df_dim, dp_dim, dp_dim);
-      Eigen::MatrixX<T> R_PF = R.block(df_dim, 0, dp_dim, df_dim);
+      MatrixX<T> R_PP = R.block(df_dim, df_dim, dp_dim, dp_dim);
+      MatrixX<T> R_PF = R.block(df_dim, 0, dp_dim, df_dim);
       R_PP_inv_R_PF = R_PP.llt().solve(R_PF);
     }
     partial_grad_by_dts->resize(M_);
@@ -192,7 +194,7 @@ void PolyTrajOpt<T, Dim, EnergyOrder>::simpleTimeAllocate(
 
   const size_t M = xi.size() + 1;
   dts.resize(M);
-  Eigen::VectorX<T> x_i = x0.col(0);
+  VectorX<T> x_i = x0.col(0);
   for (size_t i = 0; i < M; ++i) {
     double dist = 0;
     if (i == M - 1) {
@@ -624,9 +626,9 @@ Eigen::SparseMatrix<T> PolyTrajOpt<T, Dim, EnergyOrder>::getCT(void) const
 }
 
 template <typename T, size_t Dim, size_t EnergyOrder>
-Eigen::MatrixX<T> PolyTrajOpt<T, Dim, EnergyOrder>::getH(void) const
+MatrixX<T> PolyTrajOpt<T, Dim, EnergyOrder>::getH(void) const
 {
-  Eigen::MatrixX<T> H = Eigen::MatrixX<T>::Zero(2 * M_ * _R, 2 * M_ * _R);
+  MatrixX<T> H = MatrixX<T>::Zero(2 * M_ * _R, 2 * M_ * _R);
   for (size_t i = 0; i < M_; ++i) {
     H.block(2 * i * _R, 2 * i * _R, 2 * _R, 2 * _R) = getHi(i);
   }
@@ -634,29 +636,28 @@ Eigen::MatrixX<T> PolyTrajOpt<T, Dim, EnergyOrder>::getH(void) const
 }
 
 template <typename T, size_t Dim, size_t EnergyOrder>
-Eigen::MatrixX<T> PolyTrajOpt<T, Dim, EnergyOrder>::getRPartalGradByDti(
-    size_t i) const
+MatrixX<T> PolyTrajOpt<T, Dim, EnergyOrder>::getRPartalGradByDti(size_t i) const
 {
-  Eigen::MatrixX<T> Ci_T = C_T_.block(2 * i * _R, 0, 2 * _R, _R * M_ + _R);
+  MatrixX<T> Ci_T = C_T_.block(2 * i * _R, 0, 2 * _R, _R * M_ + _R);
 
-  Eigen::MatrixX<T> dR_dti = Ci_T.transpose() * getHiPartialGradByDti(i) * Ci_T;
+  MatrixX<T> dR_dti = Ci_T.transpose() * getHiPartialGradByDti(i) * Ci_T;
   return dR_dti;
 }
 
 template <typename T, size_t Dim, size_t EnergyOrder>
-Eigen::VectorX<T> PolyTrajOpt<T, Dim, EnergyOrder>::getEnergyPartialGradByDt(
-    const Eigen::MatrixX<T>& R_PP_inv_R_PF, const Eigen::MatrixX<T>& Df) const
+VectorX<T> PolyTrajOpt<T, Dim, EnergyOrder>::getEnergyPartialGradByDt(
+    const MatrixX<T>& R_PP_inv_R_PF, const MatrixX<T>& Df) const
 {
   const size_t df_dim = 2 * _R + M_ - 1;
   const size_t dp_dim = (M_ - 1) * (_R - 1);
-  Eigen::VectorX<T> grad = Eigen::VectorX<T>::Zero(M_);
-  Eigen::MatrixX<T> dR_dti(df_dim + dp_dim, df_dim + dp_dim);
-  Eigen::MatrixX<T> dR_FF_dti(df_dim, df_dim);
-  Eigen::MatrixX<T> dR_PP_dti(dp_dim, dp_dim);
-  Eigen::MatrixX<T> dR_FP_dti(df_dim, df_dim);
-  Eigen::MatrixX<T> G(df_dim, df_dim);
-  Eigen::MatrixX<T> R_PP_inv_R_PF_T = R_PP_inv_R_PF.transpose();
-  Eigen::MatrixX<T> dG(df_dim, df_dim);
+  VectorX<T> grad = VectorX<T>::Zero(M_);
+  MatrixX<T> dR_dti(df_dim + dp_dim, df_dim + dp_dim);
+  MatrixX<T> dR_FF_dti(df_dim, df_dim);
+  MatrixX<T> dR_PP_dti(dp_dim, dp_dim);
+  MatrixX<T> dR_FP_dti(df_dim, df_dim);
+  MatrixX<T> G(df_dim, df_dim);
+  MatrixX<T> R_PP_inv_R_PF_T = R_PP_inv_R_PF.transpose();
+  MatrixX<T> dG(df_dim, df_dim);
   for (size_t i = 0; i < M_; ++i) {
     dR_dti = getRPartalGradByDti(i);
     dR_FF_dti = dR_dti.block(0, 0, df_dim, df_dim);
@@ -789,14 +790,14 @@ void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Eigen::Vector2<T>& x0,
 
   if (std::abs(xf - _x0) <= dist_thresh) {
     // Triangular segment
-    std::vector<Eigen::MatrixX<T>> coeffs;
+    std::vector<MatrixX<T>> coeffs;
     std::vector<T> dts;
     T v1 = dir * std::sqrt(max_acc * std::abs(xf - _x0) + _v0 * _v0 / 2);
     while (std::abs(v1) < dir * _v0) {
       T _v0_new = -GetSign(_v0) *
                   std::sqrt(max_acc * std::abs(xf - _x0) + _v0 * _v0 / 2);
       T dt = std::abs(_v0_new - _v0) / max_acc;
-      Eigen::MatrixX<T> coeff(1, 3);
+      MatrixX<T> coeff(1, 3);
       coeff(0, 0) = _x0;
       coeff(0, 1) = _v0;
       coeff(0, 2) = -dir * max_acc / 2;
@@ -810,13 +811,13 @@ void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Eigen::Vector2<T>& x0,
     T t1 = std::abs(v1 - _v0) / max_acc;
     T x1 = (_v0 + v1) * t1 / 2 + _x0;
     T t2 = std::abs(v1) / max_acc;
-    Eigen::MatrixX<T> coeff1(1, 3);
+    MatrixX<T> coeff1(1, 3);
     coeff1(0, 0) = _x0;
     coeff1(0, 1) = _v0;
     coeff1(0, 2) = dir * max_acc / 2;
     coeffs.push_back(coeff1);
     dts.push_back(t1);
-    Eigen::MatrixX<T> coeff2(1, 3);
+    MatrixX<T> coeff2(1, 3);
     coeff2(0, 0) = x1;
     coeff2(0, 1) = v1;
     coeff2(0, 2) = -coeff1(0, 2);
@@ -831,14 +832,14 @@ void PolyTrajSegUniAcc(T max_vel, T max_acc, T t0, const Eigen::Vector2<T>& x0,
     T t2 = (std::abs(xf - _x0) - dist_thresh) / max_vel;
     T x2 = x1 + v1 * t2;
     T t3 = max_vel / max_acc;
-    Eigen::MatrixX<T> coeff1(1, 3);
+    MatrixX<T> coeff1(1, 3);
     coeff1(0, 0) = _x0;
     coeff1(0, 1) = _v0;
     coeff1(0, 2) = dir * max_acc / 2;
-    Eigen::MatrixX<T> coeff2(1, 2);
+    MatrixX<T> coeff2(1, 2);
     coeff2(0, 0) = x1;
     coeff2(0, 1) = v1;
-    Eigen::MatrixX<T> coeff3(1, 3);
+    MatrixX<T> coeff3(1, 3);
     coeff3(0, 0) = x2;
     coeff3(0, 1) = v1;
     coeff3(0, 2) = -coeff1(0, 2);

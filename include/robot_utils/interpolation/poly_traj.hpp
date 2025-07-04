@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "robot_utils/core/assert.hpp"
+#include "robot_utils/core/typedef.hpp"
 /* Exported macro ------------------------------------------------------------*/
 
 namespace robot_utils
@@ -74,7 +75,7 @@ class Poly
    * @param coeff Polynomial coefficients, \f$C \in \mathbb{R}^{d \times
    * \left(n+1\right)}\f$
    */
-  explicit Poly(const Eigen::MatrixX<T>& coeff) : coeff_(coeff)
+  explicit Poly(const MatrixX<T>& coeff) : coeff_(coeff)
   {
     RU_ASSERT(coeff.cols() > 0,
               "Polynomial coefficients must have at least 1 column");
@@ -88,22 +89,22 @@ class Poly
    * @return Polynomial value, \f$P^\left(n_d\right)\left(t\right) \in
    * \mathbb{R}^d\f$
    */
-  Eigen::VectorX<T> operator()(const T& t, size_t n_diff = 0) const;
+  VectorX<T> operator()(const T& t, size_t n_diff = 0) const;
 
   /**
    * @brief Set the polynomial coefficients
    * @param[in] coeff Polynomial coefficients, \f$C \in \mathbb{R}^{d \times
    * \left(n+1\right)}\f$
    */
-  void setCoeff(const Eigen::MatrixX<T>& coeff) { coeff_ = coeff; }
-  const Eigen::MatrixX<T>& getCoeff(void) const { return coeff_; }
+  void setCoeff(const MatrixX<T>& coeff) { coeff_ = coeff; }
+  const MatrixX<T>& getCoeff(void) const { return coeff_; }
 
  private:
   /**
    * @brief polynomial coefficients, \f$C \in \mathbb{R}^{d \times
    * \left(n+1\right)}\f$
    */
-  Eigen::MatrixX<T> coeff_;
+  MatrixX<T> coeff_;
 };
 
 /**
@@ -153,7 +154,7 @@ class PolyTraj
   using Ptr = std::shared_ptr<PolyTraj<T>>;
   using ConstPtr = std::shared_ptr<const PolyTraj<T>>;
   using Polys = std::vector<Poly<T>>;
-  using PolyCoeffs = std::vector<Eigen::MatrixX<T>>;
+  using PolyCoeffs = std::vector<MatrixX<T>>;
 
   enum CfgMask {
     kCfgMaskNone = 0,
@@ -179,7 +180,7 @@ class PolyTraj
    * @return Polynomial trajectory value, \f$P^\left(n_d\right)\left(t\right)
    * \in \mathbb{R}^d\f$
    */
-  Eigen::VectorX<T> operator()(T t, size_t n_diff = 0) const;
+  VectorX<T> operator()(T t, size_t n_diff = 0) const;
 
   /**
    * @brief Set the polynomial trajectory
@@ -346,7 +347,7 @@ class PolyTrajOpt
    */
   void optimize(const State& x0, const State& xf, const Waypoints& xi, T t0,
                 const std::vector<T>& dts, PolyTraj<T>& traj, T* J = nullptr,
-                Eigen::VectorX<T>* partial_grad_by_dts = nullptr);
+                VectorX<T>* partial_grad_by_dts = nullptr);
 
   /**
    * @brief Allocate time intervals for the polynomial trajectory
@@ -378,26 +379,25 @@ class PolyTrajOpt
 
   Eigen::SparseMatrix<T> getCT(void) const;
 
-  Eigen::MatrixX<T> getH(void) const;
+  MatrixX<T> getH(void) const;
 
-  Eigen::MatrixX<T> getRPartalGradByDti(size_t i) const;
+  MatrixX<T> getRPartalGradByDti(size_t i) const;
 
-  Eigen::VectorX<T> getEnergyPartialGradByDt(
-      const Eigen::MatrixX<T>& R_PP_inv_R_PF,
-      const Eigen::MatrixX<T>& Df) const;
+  VectorX<T> getEnergyPartialGradByDt(const MatrixX<T>& R_PP_inv_R_PF,
+                                      const MatrixX<T>& Df) const;
 
   static constexpr size_t _R = EnergyOrder;
 
   size_t M_ = 0;
-  Eigen::MatrixX<T> C_T_;
-  Eigen::VectorX<T> dts_;
-  Eigen::VectorX<T> dt2s_;
-  Eigen::VectorX<T> dt3s_;
-  Eigen::VectorX<T> dt4s_;
-  Eigen::VectorX<T> dt5s_;
-  Eigen::VectorX<T> dt6s_;
-  Eigen::VectorX<T> dt7s_;
-  Eigen::VectorX<T> dt8s_;
+  MatrixX<T> C_T_;
+  VectorX<T> dts_;
+  VectorX<T> dt2s_;
+  VectorX<T> dt3s_;
+  VectorX<T> dt4s_;
+  VectorX<T> dt5s_;
+  VectorX<T> dt6s_;
+  VectorX<T> dt7s_;
+  VectorX<T> dt8s_;
 };
 
 #ifdef HAS_NLOPT

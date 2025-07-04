@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "robot_utils/core/assert.hpp"
+#include "robot_utils/core/typedef.hpp"
 /* Exported macro ------------------------------------------------------------*/
 
 namespace robot_utils
@@ -53,10 +54,10 @@ struct LqrParams {
   T max_cost_time = 1e-3;  ///< maximum cost time, <= 0 means no limit
   T tol = static_cast<T>(1e-6);  ///< tolerance for convergence
 
-  Eigen::MatrixX<T> A;  ///< system matrix, \f$A \in \mathbb{R}^{n \times n}\f$
-  Eigen::MatrixX<T> B;  ///< input matrix, \f$B \in \mathbb{R}^{n \times m}\f$
-  DiagMatX Q;  ///< state cost matrix, \f$Q \in \mathbb{R}^{n \times n}\f$
-  DiagMatX R;  ///< input cost matrix, \f$R \in \mathbb{R}^{m \times m}\f$
+  MatrixX<T> A;  ///< system matrix, \f$A \in \mathbb{R}^{n \times n}\f$
+  MatrixX<T> B;  ///< input matrix, \f$B \in \mathbb{R}^{n \times m}\f$
+  DiagMatX Q;    ///< state cost matrix, \f$Q \in \mathbb{R}^{n \times n}\f$
+  DiagMatX R;    ///< input cost matrix, \f$R \in \mathbb{R}^{m \times m}\f$
 
   /**
    * @brief Load parameters from YAML node
@@ -195,15 +196,15 @@ class Lqr
   using Ptr = std::shared_ptr<Lqr>;
   using ConstPtr = std::shared_ptr<const Lqr>;
   /// state vector, \f$x \in \mathbb{R}^n\f$
-  using StateVec = Eigen::VectorX<T>;
+  using StateVec = VectorX<T>;
   /// input vector, \f$u \in \mathbb{R}^m\f$
-  using InputVec = Eigen::VectorX<T>;
+  using InputVec = VectorX<T>;
 
   struct Data {
     /// feedback gain matrix, \f$K \in \mathbb{R}^{m \times n}\f$
-    Eigen::MatrixX<T> K;
+    MatrixX<T> K;
     /// solution to the Riccati equation, \f$P \in \mathbb{R}^{n \times n}\f$
-    Eigen::MatrixX<T> P;
+    MatrixX<T> P;
     T res = std::numeric_limits<T>::max();  ///< residual of the cost function
     T cost_time = 0;                        ///< cost time, unit: s
     size_t iter = 0;                        ///< number of iterations
