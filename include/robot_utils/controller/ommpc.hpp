@@ -309,6 +309,8 @@ class Ommpc
   void setParams(const Params& params);
   const Params& getParams(void) const { return params_; }
 
+  const Data& getData(void) const { return data_; }
+
  private:
   void calcQBar(void);
 
