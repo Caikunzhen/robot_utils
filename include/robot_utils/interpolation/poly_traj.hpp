@@ -241,7 +241,7 @@ class PolyTraj
   size_t getDim(void) const { return dim_; }
   const Polys& getPolys(void) const { return polys_; }
   const std::vector<T>& getDts(void) const { return dts_; }
-  T getStartTime(void) { return t0_; }
+  T getStartTime(void) const { return t0_; }
   T getEndTime(void) const { return tf_; }
 
  private:
