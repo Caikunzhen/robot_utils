@@ -319,7 +319,7 @@ class PolyTrajOpt
   using ConstPtr = std::shared_ptr<const PolyTrajOpt<T, Dim, EnergyOrder>>;
 
   using State = Eigen::Matrix<T, Dim, EnergyOrder>;
-  using Waypoint = Eigen::Vector<T, Dim>;
+  using Waypoint = Eigen::Matrix<T, Dim, 1>;
   using Waypoints = std::vector<Waypoint>;
 
   PolyTrajOpt(void) = default;
