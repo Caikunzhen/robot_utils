@@ -165,16 +165,15 @@ class MemInfo
 
   /**
    * @brief Get swap memory usage percentage
-   * @return Swap memory usage percentage, [0, 1]
-   * @throw std::runtime_error if total swap memory is zero
+   * @return Swap memory usage percentage, [0, 1], -1 if total swap is zero
    */
   double getSwapUsage(void) const
   {
     if (total_swap_ == 0) {
-      throw std::runtime_error(
-          "Total swap memory is zero, cannot calculate usage");
+      return -1;
+    } else {
+      return static_cast<double>(total_swap_ - free_swap_) / total_swap_;
     }
-    return static_cast<double>(total_memory_ - free_swap_) / total_swap_;
   }
 
   static MemInfo& GetInstance(void)
