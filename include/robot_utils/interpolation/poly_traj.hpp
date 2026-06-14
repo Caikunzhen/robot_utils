@@ -190,9 +190,10 @@ class PolyTraj
    * @param[in] dts Time intervals, \f$\left[\Delta t_0, \Delta t_1, \ldots,
    * \Delta t_{M-1}\right]\f$
    * @param[in] is_time_scale Whether the trajectory is time scale or not
+   * @param[in] reverse_time Whether to reverse the time
    */
   void setTraj(T t0, const Polys& polys, const std::vector<T>& dts,
-               bool is_time_scale = true)
+               bool is_time_scale = true, bool reverse_time = false)
   {
     RU_ASSERT(polys.size() == dts.size(),
               "polys.size() = %zu, dts.size() = %zu", polys.size(), dts.size());
@@ -205,6 +206,7 @@ class PolyTraj
     polys_ = polys;
     dts_ = dts;
     is_time_scale_ = is_time_scale;
+    reverse_time_ = reverse_time;
     tf_ = t0_;
     for (const auto& dt : dts_) {
       tf_ += dt;
@@ -218,9 +220,10 @@ class PolyTraj
    * @param[in] dts Time intervals, \f$\left[\Delta t_0, \Delta t_1, \ldots,
    * \Delta t_{M-1}\right]\f$
    * @param[in] is_time_scale Whether the trajectory is time scale or not
+   * @param[in] reverse_time Whether to reverse the time
    */
   void setTraj(T t0, const PolyCoeffs& coeffs, const std::vector<T>& dts,
-               bool is_time_scale = true)
+               bool is_time_scale = true, bool reverse_time = false)
   {
     RU_ASSERT(coeffs.size() == dts.size(),
               "coeffs.size() = %zu, dts.size() = %zu", coeffs.size(),
@@ -232,6 +235,7 @@ class PolyTraj
     }
     dts_ = dts;
     is_time_scale_ = is_time_scale;
+    reverse_time_ = reverse_time;
     tf_ = t0_;
     for (const auto& dt : dts_) {
       tf_ += dt;
@@ -258,6 +262,7 @@ class PolyTraj
   T t0_ = 0;  ///< start time, \f$t_0\f$
   T tf_ = 0;  ///< end time, \f$t_M\f$
   bool is_time_scale_ = true;
+  bool reverse_time_ = false;
 };
 
 /**
