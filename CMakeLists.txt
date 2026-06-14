@@ -91,7 +91,7 @@ if (NLopt_FOUND)
   target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
-      NLopt::nlopt
+      ${NLOPT_LIBRARIES}
   )
   target_compile_definitions(
     ${PROJECT_NAME}
