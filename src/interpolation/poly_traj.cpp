@@ -77,7 +77,13 @@ VectorX<T> PolyTraj<T>::operator()(T t, size_t n_diff) const
     }
     dt /= dts_[idx];
   }
-  return polys_[idx](dt, n_diff) / dt_n;
+  T sign;
+  if (reverse_time_ && n_diff % 2 == 1) {
+    sign = -1;
+  } else {
+    sign = 1;
+  }
+  return sign * polys_[idx](dt, n_diff) / dt_n;
 }
 
 template <typename T>
@@ -87,21 +93,43 @@ void PolyTraj<T>::getPolyIdxAndDt(const T& t, size_t& idx, T& dt) const
   if (cfg_mask_ & kCfgMaskStartClamp) {
     t_p = std::max<T>(t_p, 0);
   }
-  for (idx = 0; idx < dts_.size(); ++idx) {
-    if (t_p >= dts_[idx]) {
-      t_p -= dts_[idx];
-    } else {
-      dt = t_p;
-      break;
+  if (!reverse_time_) {
+    for (idx = 0; idx < dts_.size(); ++idx) {
+      if (t_p >= dts_[idx]) {
+        t_p -= dts_[idx];
+      } else {
+        dt = t_p;
+        break;
+      }
     }
-  }
 
-  if (idx == dts_.size()) {
-    idx = dts_.size() - 1;
-    if (cfg_mask_ & kCfgMaskEndClamp) {
-      dt = dts_[idx];
-    } else {
-      dt = t_p;
+    if (idx == dts_.size()) {
+      idx = dts_.size() - 1;
+      if (cfg_mask_ & kCfgMaskEndClamp) {
+        dt = dts_[idx];
+      } else {
+        dt = t_p;
+      }
+    }
+  } else {
+    int _idx;
+    for (_idx = dts_.size() - 1; _idx >= 0; --_idx) {
+      if (t_p >= dts_[_idx]) {
+        t_p -= dts_[_idx];
+      } else {
+        dt = dts_[_idx] - t_p;
+        idx = _idx;
+        break;
+      }
+    }
+
+    if (_idx < 0) {
+      idx = 0;
+      if (cfg_mask_ & kCfgMaskEndClamp) {
+        dt = 0;
+      } else {
+        dt = -t_p;
+      }
     }
   }
 }
